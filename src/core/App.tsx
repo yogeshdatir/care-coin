@@ -4,6 +4,7 @@ import DashboardPage from '@/features/dashboard/components/DashboardPage';
 import LoadingPage from '@/shared/components/LoadingPage';
 import { lazy, Suspense } from 'react';
 import Layout from './components/Layout';
+import MedicinesPage from '@/features/medicines/components/MedicinesPage';
 
 const NotFound = lazy(() => import('@/shared/components/NotFound'));
 const SettingsPage = lazy(
@@ -23,6 +24,7 @@ function App() {
                 element={<Navigate to="/dashboard" replace />}
               />
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/medicines" element={<MedicinesPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={<NotFound />} />
             </Route>
