@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router';
 import Sidebar from './Sidebar';
 
-const Layout = () => {
+const RootLayout = () => {
   return (
     <div className="flex gap-2">
       <Sidebar />
@@ -10,4 +10,4 @@ const Layout = () => {
   );
 };
 
-export default Layout;
+export default RootLayout;
