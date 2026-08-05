@@ -37,3 +37,7 @@ export interface MedicineVariant {
   form?: MedicineForm;
   strength?: string;
 }
+
+export type MedicineRequestPayload = Omit<MedicineVariant, 'id'> & {
+  variants: Omit<Medicine, 'id'>[];
+};

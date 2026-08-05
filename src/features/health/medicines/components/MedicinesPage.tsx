@@ -20,44 +20,59 @@ import {
   MEDICINE_FORMS,
   type Medicine,
   type MedicineFormItem,
-  type MedicineVariant,
 } from '@/shared/types';
-import { useState, type ChangeEvent, type SubmitEvent } from 'react';
+import { useState } from 'react';
+import {
+  Controller,
+  useFieldArray,
+  useForm,
+  type SubmitHandler,
+} from 'react-hook-form';
+
+type Inputs = Partial<Medicine>;
+
+const INITIAL_VARIANT = {
+  form: '',
+  strength: '',
+};
 
 const INITIAL_MEDICINE = {
-  id: Date.now().toString(),
   name: '',
   sideEffects: '',
+  variants: [
+    {
+      ...INITIAL_VARIANT,
+    },
+  ],
 };
 
 const MedicinesPage = () => {
-  const [medicines, setMedicines] = useState<Medicine[]>([]);
-  const [newMedicine, setNewMedicine] = useState<Medicine>(INITIAL_MEDICINE);
-  const [newMedVars, setNewMedVars] = useState<MedicineVariant[]>([]);
+  const [medicines, setMedicines] = useState<any>([]);
 
-  const handleNewMedicineInput = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    setNewMedicine((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+  const { register, handleSubmit, control, reset } = useForm({
+    defaultValues: INITIAL_MEDICINE,
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'variants',
+  });
+
+  const handleAddNewMedicine: SubmitHandler<Inputs> = (data) => {
+    console.log(data);
+    setMedicines((prev) => [...prev, data]);
+    reset(INITIAL_MEDICINE);
   };
 
-  const handleAddNewMedicine = (e: SubmitEvent) => {
-    e.preventDefault();
-
-    setMedicines((prev) => [...prev, newMedicine]);
-    setNewMedicine(INITIAL_MEDICINE);
+  const handleAddVariant = () => {
+    append(INITIAL_VARIANT);
   };
-
-  const handleFormSelect = (value) => {};
 
   return (
     <div>
       <form
-        onSubmit={handleAddNewMedicine}
-        className="flex flex-col gap-3 py-3"
+        onSubmit={handleSubmit(handleAddNewMedicine)}
+        className="flex flex-col gap-3 py-3 min-w-[400px]"
       >
         <FieldSet>
           <FieldLegend>Medicine</FieldLegend>
@@ -70,10 +85,7 @@ const MedicinesPage = () => {
                 id="input-name"
                 type="text"
                 placeholder="Medicine Name"
-                name="name"
-                value={newMedicine.name}
-                onChange={handleNewMedicineInput}
-                required
+                {...register('name', { required: true })}
               />
             </Field>
             <Field orientation="horizontal">
@@ -81,9 +93,7 @@ const MedicinesPage = () => {
               <Textarea
                 id="input-side-effects"
                 placeholder="Side Effects"
-                name="sideEffects"
-                value={newMedicine.sideEffects}
-                onChange={handleNewMedicineInput}
+                {...register('sideEffects')}
               />
             </Field>
           </FieldGroup>
@@ -91,41 +101,65 @@ const MedicinesPage = () => {
         <FieldSet>
           <FieldLegend>Variants</FieldLegend>
           <FieldGroup>
-            <Field>
-              <FieldLabel>Form</FieldLabel>
-              <Select onValueChange={handleFormSelect}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Form" />
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  <SelectGroup>
-                    {MEDICINE_FORMS.map(
-                      ({ value, label }: MedicineFormItem) => {
-                        return (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        );
-                      },
-                    )}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field orientation="horizontal">
-              <FieldLabel htmlFor="input-strength">Strength</FieldLabel>
-              <Input
-                id="input-strength"
-                type="text"
-                placeholder="Medicine Strength"
-                name="strength"
-                // value={newMedicine.name}
-                // onChange={handleNewMedicineInput}
-              />
-            </Field>
+            {fields.map((item, index) => {
+              return (
+                <FieldGroup key={item.id}>
+                  <Controller
+                    name={`variants.${index}.form` as const}
+                    control={control}
+                    render={({ field, fieldState }) => {
+                      return (
+                        <Field orientation="horizontal">
+                          <FieldLabel htmlFor="select-form">Form</FieldLabel>
+                          <Select
+                            name={field.name}
+                            value={field.value ?? ''}
+                            onValueChange={field.onChange}
+                          >
+                            <SelectTrigger
+                              id="select-form"
+                              aria-invalid={fieldState.invalid}
+                            >
+                              <SelectValue placeholder="Select a Form..." />
+                            </SelectTrigger>
+                            <SelectContent position="popper">
+                              <SelectGroup>
+                                {MEDICINE_FORMS.map(
+                                  ({ value, label }: MedicineFormItem) => {
+                                    return (
+                                      <SelectItem key={value} value={value}>
+                                        {label}
+                                      </SelectItem>
+                                    );
+                                  },
+                                )}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                      );
+                    }}
+                  />
+                  <Field orientation="horizontal">
+                    <FieldLabel htmlFor="input-strength">Strength</FieldLabel>
+                    <Input
+                      id="input-strength"
+                      placeholder="Medicine Strength"
+                      {...register(`variants.${index}.strength`)}
+                    />
+                  </Field>
+                  <Button type="button" onClick={() => remove(index)}>
+                    Remove
+                  </Button>
+                </FieldGroup>
+              );
+            })}
           </FieldGroup>
+          <Button type="button" onClick={handleAddVariant}>
+            Add Another Variant
+          </Button>
         </FieldSet>
-        <Button type="submit">Add New</Button>
+        <Button type="submit">Create New Medicine</Button>
       </form>
       <h1>Medicine List</h1>
       <table className="border">
@@ -133,13 +167,13 @@ const MedicinesPage = () => {
           <tr>
             <th className="px-2 border">Sr No</th>
             <th className="px-2 border">Name</th>
-            <th className="px-2 border">Form</th>
+            <th className="px-2 border">Side Effects</th>
           </tr>
         </thead>
         <tbody>
           {medicines.map(({ id, name, sideEffects }, index) => {
             return (
-              <tr key={id}>
+              <tr key={name}>
                 <td className="px-2 border">{index + 1}</td>
                 <td className="px-2 border">{name}</td>
                 <td className="px-2 border">{sideEffects}</td>
