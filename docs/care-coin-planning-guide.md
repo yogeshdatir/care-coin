@@ -40,34 +40,52 @@ A personal health tracker starting as a single app, built so it can split into i
 | `name` | |
 | `mode` | `'health' \| 'expense' \| 'both'` — added in v3 |
 
-**Medicine** — catalog of stable facts about the drug, deduped by name + form
+**Medicine** — catalog of just the drug identity, deduped by name
 | Field | Notes |
 |---|---|
 | `id` | PK |
 | `userId` | FK |
 | `name` | |
-| `form` | `'tablet' \| 'syrup' \| ...` |
-| `strengthOptions?` | |
+| `sideEffects?` | free text — side effects, allergies, anything worth remembering about this drug; dates included inline by the user if relevant |
+
+**MedicineVariant** — one row per form + strength combination for a medicine
+| Field | Notes |
+|---|---|
+| `id` | PK |
+| `medicineId` | FK |
+| `form?` | `'tablet' \| 'syrup' \| ...` — optional; unset until filled in via quick-create flow, see pattern doc |
+| `strength?` | e.g. `'500mg'`, `'250ml'` — free text; optional for the same reason `form` is — quick-create shouldn't block on knowing both |
+
+**Doctor**
+| Field | Notes |
+|---|---|
+| `id` | PK |
+| `userId` | FK |
+| `name` | |
+| `specialty?` | e.g. "Orthopedic," "General Physician" |
+| `clinicName?` | |
+| `city?` | disambiguates doctors/clinics across different cities |
+| `phone?` | |
+| `notes?` | |
 
 **Prescription**
 | Field | Notes |
 |---|---|
 | `id` | PK |
 | `userId` | FK |
-| `doctorName` | |
+| `doctorId` | FK — replaces `doctorName` |
 | `date` | when the doctor issued the prescription |
 | `notes?` | |
 | `imageUrl?` | |
 
-**PrescriptionMedicine** — join entity, one row per medicine per prescription
+**PrescriptionMedicine** — join entity, one row per medicine variant per prescription
 | Field | Notes |
 |---|---|
 | `id` | PK |
 | `prescriptionId` | FK |
-| `medicineId` | FK |
-| `dosage` | |
+| `medicineVariantId` | FK — replaces `medicineId`; dosage is implied by the variant's `strength`, not duplicated here |
 | `frequency` | |
-| `stockCount` | |
+| `reason?` | free text — symptom/condition this was prescribed for, e.g. "back pain"; enables finding "what did I take last time for X" across prescriptions |
 | `startDate` | when this medicine begins — may differ from `Prescription.date` |
 | `endDate?` | |
 
@@ -81,7 +99,7 @@ A personal health tracker starting as a single app, built so it can split into i
 | `category` | |
 | `domain` | `'health' \| 'general'` — `'general'` arrives in v2 |
 | `linkedPrescriptionId?` | |
-| `linkedMedicineId?` | |
+| `linkedMedicineVariantId?` | replaces `linkedMedicineId?` — price tracking needs to know which variant (form + strength) was bought |
 | `receiptUrl?` | |
 
 **ExpenseCategory** (v2)
@@ -98,48 +116,82 @@ erDiagram
   USER ||--o{ PRESCRIPTION : has
   USER ||--o{ EXPENSE : logs
   USER ||--o{ MEDICINE : catalogs
+  USER ||--o{ DOCTOR : knows
+  MEDICINE ||--o{ MEDICINE_VARIANT : "comes in"
+  DOCTOR ||--o{ PRESCRIPTION : issues
   PRESCRIPTION ||--o{ PRESCRIPTION_MEDICINE : contains
-  MEDICINE ||--o{ PRESCRIPTION_MEDICINE : "prescribed as"
+  MEDICINE_VARIANT ||--o{ PRESCRIPTION_MEDICINE : "prescribed as"
   PRESCRIPTION_MEDICINE ||--o{ EXPENSE : "linked to"
   USER {
     string id PK
     string name
     string mode
   }
+  DOCTOR {
+    string id PK
+    string userId FK
+    string name
+    string specialty
+    string clinicName
+    string city
+    string phone
+    string notes
+  }
   MEDICINE {
     string id PK
+    string userId FK
     string name
+    string sideEffects
+  }
+  MEDICINE_VARIANT {
+    string id PK
+    string medicineId FK
     string form
+    string strength
   }
   PRESCRIPTION {
     string id PK
-    string doctorName
+    string userId FK
+    string doctorId FK
     date date
+    string notes
+    string imageUrl
   }
   PRESCRIPTION_MEDICINE {
     string id PK
     string prescriptionId FK
-    string medicineId FK
-    string dosage
+    string medicineVariantId FK
     string frequency
-    int stockCount
+    string reason
+    date startDate
+    date endDate
   }
   EXPENSE {
     string id PK
+    string userId FK
     number amount
+    date date
+    string category
     string domain
-    string linkedPrescriptionMedicineId FK
+    string linkedPrescriptionId FK
+    string linkedMedicineVariantId FK
+    string receiptUrl
   }
 ```
 
 ### Design notes
 
-- Dosage, frequency, and stock live on `PrescriptionMedicine`, not `Medicine` — the same drug can be prescribed differently across prescriptions (dose changes over time), so these are per-prescription facts, not drug facts.
-- `Medicine detail` page reads _current_ dosage/frequency from the latest `PrescriptionMedicine` row, and shows the full history by listing all rows across prescriptions for that `medicineId`.
+- `Medicine` now holds only drug identity (`name`) — `form`, `strength`, and `price` move together as one unit because they vary together: the same drug in a different form or strength has a different price, so they can't be independent flat fields on `Medicine`.
+- `MedicineVariant` is the "SKU" of a medicine — one row per form+strength combination, each with its own `referencePrice`. `PrescriptionMedicine` and `Expense` reference a specific variant, not the medicine directly.
+- Dosage is no longer a separate field on `PrescriptionMedicine` — it's implied by `MedicineVariant.strength`, avoiding duplicating the same fact in two places.
+- `Medicine detail` page lists its variants (with prices), and shows prescription history by listing `PrescriptionMedicine` rows across all variants of that medicine.
+- The quick-create combobox pattern (see `react-patterns-learned.md`) now applies at two levels: create/select a `Medicine`, then create/select a `MedicineVariant` (form + strength) under it — same pattern, one more hop.
 - `Expense.domain` exists from v1 even though only `'health'` is used — avoids a migration when v2 adds general expenses.
-- Foreign keys (`prescriptionId`, `linkedMedicineId`, etc.) are the only coupling between Health and Expense entities — keep it that way so each domain can own its own store independently.
+- Foreign keys (`prescriptionId`, `linkedMedicineVariantId`, etc.) are the only coupling between Health and Expense entities — keep it that way so each domain can own its own store independently.
 - `userId` on `Medicine`, `Prescription`, and `Expense` is kept in the schema now (cheap insurance) but not populated/used in v1 — avoids a migration touching every table if multi-user is added later.
 - `mode` is an app-level setting (local storage / `AppSettings` singleton) in v1/v2, not read from `User`, since there's no `User` row yet. Move it onto `User` only when multi-user actually lands.
+- `MedicineVariant.form` is optional, not required — the quick-create combobox only captures the minimum needed at creation time for speed; `form` and `referencePrice` are filled in later from the Medicine detail page. UI should nudge but not block on this being empty.
+- `Doctor` is its own entity (not a flat string on `Prescription`) since doctors are reused across prescriptions and their details (specialty, clinic, city) are worth preserving. `city?` exists specifically to disambiguate doctors across multiple cities in the user's history. Same quick-create combobox pattern applies — create/select inline from the Prescription form, other fields filled in later.
 
 ---
 
@@ -237,3 +289,7 @@ Mode filtering is a single lookup in the host layout — no per-page logic neede
 - Routes are lazy-loaded (`React.lazy`) per module folder now, so swapping a lazy import for a Module Federation remote import later is a one-line change.
 - Mode context (from Settings/onboarding) gates which route configs the host merges in — not the router itself, so no route guards needed in v1/v2.
 - `/expenses/:id` needs a `domain` param or lookup to route to the correct module's detail component once both exist (v2+).
+
+---
+
+**See also**: [`react-patterns-learned.md`](./react-patterns-learned.md) — reusable UI/architecture patterns discovered while building this app (e.g. inline "search or create" comboboxes), kept separate since they apply beyond CareCoin.
