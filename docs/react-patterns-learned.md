@@ -95,7 +95,7 @@ MEDICINE_FORMS.map(f => <SelectItem value={f}>{f}</SelectItem>)
 - **Declaration merging** only works with `interface` — same name declared twice merges automatically, which matters when extending third-party or global types (e.g. augmenting an Express `Request`). A `type` would just conflict instead of merging.
 - Beyond those two, it's convention (readability, matches common codebase style) rather than capability — worth following for consistency in a codebase that will grow, even though nothing breaks if you don't.
 
-**Applied**: entity shapes (`Medicine`, `Doctor`, `Prescription`) → `interface`. Unions (`MedicineForm`) and derived request/response shapes (`CreateMedicineRequest = Omit<Medicine, 'id'> & {...}`) → `type`.
+**Applied**: entity shapes (`Medicine`, `Doctor`, `Prescription`) → `interface`. Unions (`MedicineForm`) and derived request/response shapes (`CreateMedicineRequestPayload = Omit<Medicine, 'id'> & {...}`) → `type`.
 
 ---
 

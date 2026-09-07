@@ -1,3 +1,4 @@
+import { createMedicine } from '@/shared/api/medicines';
 import { Button } from '@/shared/components/ui/button';
 import {
   Field,
@@ -20,16 +21,16 @@ import {
   MEDICINE_FORMS,
   type Medicine,
   type MedicineFormItem,
+  type CreateMedicineRequestPayload,
 } from '@/shared/types';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
+import type { MedicineVariant } from '../../../../shared/types/health';
 import {
   Controller,
   useFieldArray,
   useForm,
   type SubmitHandler,
 } from 'react-hook-form';
-
-type Inputs = Partial<Medicine>;
 
 const INITIAL_VARIANT = {
   form: '',
@@ -47,7 +48,7 @@ const INITIAL_MEDICINE = {
 };
 
 const MedicinesPage = () => {
-  const [medicines, setMedicines] = useState<any>([]);
+  const [medicines, setMedicines] = useState<Medicine[]>([]);
 
   const { register, handleSubmit, control, reset } = useForm({
     defaultValues: INITIAL_MEDICINE,
@@ -58,9 +59,20 @@ const MedicinesPage = () => {
     name: 'variants',
   });
 
-  const handleAddNewMedicine: SubmitHandler<Inputs> = (data) => {
-    console.log(data);
-    setMedicines((prev) => [...prev, data]);
+  const handleAddNewMedicine: SubmitHandler<
+    CreateMedicineRequestPayload
+  > = async (data) => {
+    const cleanedVariants = data.variants?.filter(
+      (variant) => variant.form?.trim() !== '',
+    );
+
+    const finalData = {
+      ...data,
+      variants: cleanedVariants,
+    };
+    console.log({ finalData });
+    const response: Medicine = await createMedicine(finalData);
+    setMedicines((prev) => [...prev, response]);
     reset(INITIAL_MEDICINE);
   };
 
@@ -72,7 +84,7 @@ const MedicinesPage = () => {
     <div>
       <form
         onSubmit={handleSubmit(handleAddNewMedicine)}
-        className="flex flex-col gap-3 py-3 min-w-[400px]"
+        className="flex flex-col gap-3 py-3 min-w-100"
       >
         <FieldSet>
           <FieldLegend>Medicine</FieldLegend>
@@ -171,12 +183,22 @@ const MedicinesPage = () => {
           </tr>
         </thead>
         <tbody>
-          {medicines.map(({ id, name, sideEffects }, index) => {
+          {medicines.map(({ id, name, sideEffects, variants }, index) => {
             return (
-              <tr key={name}>
+              <tr key={id}>
                 <td className="px-2 border">{index + 1}</td>
                 <td className="px-2 border">{name}</td>
                 <td className="px-2 border">{sideEffects}</td>
+                {variants && variants?.length > 0 ? (
+                  <>
+                    {variants.map(({ id, form, strength }: MedicineVariant) => (
+                      <Fragment key={id}>
+                        <td className="px-2 border">{form}</td>
+                        <td className="px-2 border">{strength}</td>
+                      </Fragment>
+                    ))}
+                  </>
+                ) : null}
               </tr>
             );
           })}

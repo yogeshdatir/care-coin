@@ -29,6 +29,7 @@ export interface Medicine {
   id: string;
   name: string;
   sideEffects?: string;
+  variants?: MedicineVariant[];
 }
 
 export interface MedicineVariant {
@@ -38,6 +39,6 @@ export interface MedicineVariant {
   strength?: string;
 }
 
-export type MedicineRequestPayload = Omit<MedicineVariant, 'id'> & {
-  variants: Omit<Medicine, 'id'>[];
+export type CreateMedicineRequestPayload = Omit<Medicine, 'id' | 'variants'> & {
+  variants?: Omit<MedicineVariant, 'id' | 'medicineId'>[];
 };
