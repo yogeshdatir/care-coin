@@ -87,7 +87,7 @@ const MedicinesPage = () => {
         className="flex flex-col gap-3 py-3 min-w-100"
       >
         <FieldSet>
-          <FieldLegend>Medicine</FieldLegend>
+          <FieldLegend>New Medicine</FieldLegend>
           <FieldGroup>
             <Field orientation="horizontal">
               <FieldLabel htmlFor="input-name">
@@ -173,7 +173,7 @@ const MedicinesPage = () => {
         </FieldSet>
         <Button type="submit">Create New Medicine</Button>
       </form>
-      <h1>Medicine List</h1>
+      <h1>Medicines</h1>
       <table className="border">
         <thead>
           <tr>

@@ -54,3 +54,13 @@ export interface Doctor {
 }
 
 export type CreateDoctorRequestPayload = Omit<Doctor, 'id'>;
+
+export interface Prescription {
+  id: string;
+  doctorId: string;
+  date: string;
+  notes?: string;
+  imageUrl?: string;
+}
+
+export type CreatePrescriptionRequestPayload = Omit<Prescription, 'id'>;

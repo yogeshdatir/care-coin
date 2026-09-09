@@ -44,7 +44,7 @@ const DoctorsPage = () => {
         className="flex flex-col gap-3 py-3 min-w-100"
       >
         <FieldSet>
-          <FieldLegend>Doctor</FieldLegend>
+          <FieldLegend>New Doctor</FieldLegend>
           <FieldGroup>
             <Field orientation="horizontal">
               <FieldLabel htmlFor="input-name">
@@ -107,7 +107,7 @@ const DoctorsPage = () => {
           <Button type="submit">Add Doctor</Button>
         </FieldSet>
       </form>
-      <h1>Doctor List</h1>
+      <h1>Doctors</h1>
       <table className="border">
         <thead>
           <tr>
