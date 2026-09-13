@@ -55,12 +55,22 @@ export interface Doctor {
 
 export type CreateDoctorRequestPayload = Omit<Doctor, 'id'>;
 
+export interface PrescriptionMedicineFormRow {
+  medicineId: Medicine['id'];
+  medicineVariantId: MedicineVariant['id'];
+  frequency?: string;
+  reason?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 export interface Prescription {
   id: string;
   doctorId: string;
   date: string;
   notes?: string;
   imageUrl?: string;
+  medicines?: PrescriptionMedicineFormRow[];
 }
 
 export type CreatePrescriptionRequestPayload = Omit<Prescription, 'id'>;

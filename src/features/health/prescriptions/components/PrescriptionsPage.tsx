@@ -20,22 +20,41 @@ import { useEffect, useState } from 'react';
 import type {
   CreatePrescriptionRequestPayload,
   Doctor,
+  Medicine,
+  MedicineVariant,
   Prescription,
 } from '../../../../shared/types/health';
-import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
+import {
+  Controller,
+  useFieldArray,
+  useForm,
+  type SubmitHandler,
+} from 'react-hook-form';
 import { createPrescription } from '@/shared/api/prescription';
 import { fetchDoctors } from '@/shared/api/doctor';
+import { fetchMedicines } from '@/shared/api/medicines';
+
+const INITIAL_MEDICINE = {
+  medicineId: '',
+  medicineVariantId: '',
+  frequency: '',
+  reason: '',
+  startDate: '',
+  endDate: '',
+};
 
 const INITIAL_PRESCRIPTION = {
   doctorId: '',
   date: '',
   notes: '',
   imageUrl: '',
+  medicines: [INITIAL_MEDICINE],
 };
 
 const PrescriptionsPage = () => {
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [medicines, setMedicines] = useState<Medicine[]>([]);
 
   useEffect(() => {
     const getDoctors = async () => {
@@ -43,6 +62,11 @@ const PrescriptionsPage = () => {
       setDoctors(fetchedDoctors);
     };
     getDoctors();
+    const getMedicines = async () => {
+      const fetchedMedicines = await fetchMedicines();
+      setMedicines(fetchedMedicines);
+    };
+    getMedicines();
   }, []);
 
   const { register, handleSubmit, reset, control } = useForm({
@@ -52,13 +76,31 @@ const PrescriptionsPage = () => {
   const handleAddNewPrescription: SubmitHandler<
     CreatePrescriptionRequestPayload
   > = async (data) => {
-    const response: Prescription = await createPrescription(data);
+    const cleanedMedicines = data.medicines?.filter(
+      (medicine) => medicine.medicineId?.trim() !== '',
+    );
+
+    const finalData = {
+      ...data,
+      medicines: cleanedMedicines,
+    };
+    console.log(finalData);
+    const response: Prescription = await createPrescription(finalData);
     setPrescriptions((prev) => [...prev, response]);
     reset(INITIAL_PRESCRIPTION);
   };
 
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'medicines',
+  });
+
+  const handleAddPrescription = () => {
+    append(INITIAL_MEDICINE);
+  };
+
   return (
-    <div>
+    <>
       <form
         onSubmit={handleSubmit(handleAddNewPrescription)}
         className="flex flex-col gap-3 py-3 min-w-100"
@@ -131,7 +173,101 @@ const PrescriptionsPage = () => {
             </Field>
           </FieldGroup>
         </FieldSet>
-        <Button type="submit">Create New Medicine</Button>
+
+        <FieldSet>
+          <FieldLegend>Medicines</FieldLegend>
+          <FieldGroup>
+            {fields.map((item, index) => {
+              const variantOptions: MedicineVariant[] = [];
+              return (
+                <FieldGroup key={item.id}>
+                  <Controller
+                    name={`medicines.${index}.medicineId` as const}
+                    control={control}
+                    render={({ field, fieldState }) => {
+                      return (
+                        <Field orientation="horizontal">
+                          <FieldLabel htmlFor="select-form">Name</FieldLabel>
+                          <Select
+                            name={field.name}
+                            value={field.value ?? ''}
+                            onValueChange={field.onChange}
+                          >
+                            <SelectTrigger
+                              id="select-form"
+                              aria-invalid={fieldState.invalid}
+                            >
+                              <SelectValue placeholder="Select a medicine..." />
+                            </SelectTrigger>
+                            <SelectContent position="popper">
+                              <SelectGroup>
+                                {medicines.map(
+                                  ({ id: value, name: label }: Medicine) => {
+                                    return (
+                                      <SelectItem key={value} value={value}>
+                                        {label}
+                                      </SelectItem>
+                                    );
+                                  },
+                                )}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                      );
+                    }}
+                  />
+                  <Controller
+                    name={`medicines.${index}.medicineVariantId` as const}
+                    control={control}
+                    render={({ field, fieldState }) => {
+                      return (
+                        <Field orientation="horizontal">
+                          <FieldLabel htmlFor="select-form">Variant</FieldLabel>
+                          <Select
+                            name={field.name}
+                            value={field.value ?? ''}
+                            onValueChange={field.onChange}
+                          >
+                            <SelectTrigger
+                              id="select-form"
+                              aria-invalid={fieldState.invalid}
+                            >
+                              <SelectValue placeholder="Select a variant..." />
+                            </SelectTrigger>
+                            <SelectContent position="popper">
+                              <SelectGroup>
+                                {variantOptions.map(
+                                  ({
+                                    id: value,
+                                    form: label,
+                                  }: MedicineVariant) => {
+                                    return (
+                                      <SelectItem key={value} value={value}>
+                                        {label}
+                                      </SelectItem>
+                                    );
+                                  },
+                                )}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                      );
+                    }}
+                  />
+                  <Button type="button" onClick={() => remove(index)}>
+                    Remove
+                  </Button>
+                </FieldGroup>
+              );
+            })}
+          </FieldGroup>
+          <Button type="button" onClick={handleAddPrescription}>
+            Add Another Prescribed Medicine
+          </Button>
+        </FieldSet>
+        <Button type="submit">Add Prescription</Button>
       </form>
       <h1>Prescriptions</h1>
       <table className="border">
@@ -156,7 +292,7 @@ const PrescriptionsPage = () => {
           })}
         </tbody>
       </table>
-    </div>
+    </>
   );
 };
 

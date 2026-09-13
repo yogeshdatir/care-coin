@@ -81,7 +81,7 @@ const MedicinesPage = () => {
   };
 
   return (
-    <div>
+    <>
       <form
         onSubmit={handleSubmit(handleAddNewMedicine)}
         className="flex flex-col gap-3 py-3 min-w-100"
@@ -171,7 +171,7 @@ const MedicinesPage = () => {
             Add Another Variant
           </Button>
         </FieldSet>
-        <Button type="submit">Create New Medicine</Button>
+        <Button type="submit">Add Medicine</Button>
       </form>
       <h1>Medicines</h1>
       <table className="border">
@@ -204,7 +204,7 @@ const MedicinesPage = () => {
           })}
         </tbody>
       </table>
-    </div>
+    </>
   );
 };
 

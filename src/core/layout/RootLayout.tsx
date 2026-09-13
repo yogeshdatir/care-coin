@@ -5,7 +5,9 @@ const RootLayout = () => {
   return (
     <div className="flex gap-2">
       <Sidebar />
-      <Outlet />
+      <div className="flex-1 px-5">
+        <Outlet />
+      </div>
     </div>
   );
 };

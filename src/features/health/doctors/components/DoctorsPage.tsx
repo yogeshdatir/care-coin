@@ -38,7 +38,7 @@ const DoctorsPage = () => {
   };
 
   return (
-    <div>
+    <>
       <form
         onSubmit={handleSubmit(handleAddNewDoctor)}
         className="flex flex-col gap-3 py-3 min-w-100"
@@ -141,7 +141,7 @@ const DoctorsPage = () => {
           )}
         </tbody>
       </table>
-    </div>
+    </>
   );
 };
 

@@ -1,4 +1,4 @@
-import type { CreateMedicineRequestPayload } from '../types';
+import type { CreateMedicineRequestPayload, Medicine } from '../types';
 
 export const createMedicine = async (data: CreateMedicineRequestPayload) => {
   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -17,4 +17,12 @@ export const createMedicine = async (data: CreateMedicineRequestPayload) => {
   };
 
   return savedMedicine;
+};
+
+export const fetchMedicines = async () => {
+  await new Promise((resolve) => setTimeout(resolve, 300));
+
+  const medicines: Medicine[] = [];
+
+  return medicines;
 };

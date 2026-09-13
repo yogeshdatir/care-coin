@@ -25,7 +25,7 @@ const SettingsPage = () => {
   };
 
   return (
-    <div>
+    <>
       <h1>MEDICAL CATALOG REGISTRY</h1>
       <p>Pre-define the variables that populate your health & dose logs.</p>
       <form onSubmit={handleAddCatalogItems}>
@@ -72,7 +72,7 @@ const SettingsPage = () => {
           </tbody>
         </table>
       </div>
-    </div>
+    </>
   );
 };
 
