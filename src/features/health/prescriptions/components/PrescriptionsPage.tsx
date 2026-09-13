@@ -114,7 +114,7 @@ const PrescriptionsPage = () => {
               rules={{ required: true }}
               render={({ field, fieldState }) => (
                 <Field orientation="horizontal">
-                  <FieldLabel htmlFor="select-doctor">
+                  <FieldLabel htmlFor="select-doctor" className="flex-none!">
                     Doctor <span className="text-destructive">*</span>
                   </FieldLabel>
                   <Select
@@ -125,6 +125,7 @@ const PrescriptionsPage = () => {
                     <SelectTrigger
                       id="select-doctor"
                       aria-invalid={fieldState.invalid}
+                      className="flex-1"
                     >
                       <SelectValue placeholder="Select a Doctor..." />
                     </SelectTrigger>
@@ -180,14 +181,19 @@ const PrescriptionsPage = () => {
             {fields.map((item, index) => {
               const variantOptions: MedicineVariant[] = [];
               return (
-                <FieldGroup key={item.id}>
+                <FieldGroup key={item.id} className="flex flex-row gap-2">
                   <Controller
                     name={`medicines.${index}.medicineId` as const}
                     control={control}
                     render={({ field, fieldState }) => {
                       return (
                         <Field orientation="horizontal">
-                          <FieldLabel htmlFor="select-form">Name</FieldLabel>
+                          <FieldLabel
+                            htmlFor="select-form"
+                            className="flex-none!"
+                          >
+                            Name
+                          </FieldLabel>
                           <Select
                             name={field.name}
                             value={field.value ?? ''}
@@ -196,6 +202,7 @@ const PrescriptionsPage = () => {
                             <SelectTrigger
                               id="select-form"
                               aria-invalid={fieldState.invalid}
+                              className="flex-1"
                             >
                               <SelectValue placeholder="Select a medicine..." />
                             </SelectTrigger>
@@ -223,7 +230,12 @@ const PrescriptionsPage = () => {
                     render={({ field, fieldState }) => {
                       return (
                         <Field orientation="horizontal">
-                          <FieldLabel htmlFor="select-form">Variant</FieldLabel>
+                          <FieldLabel
+                            htmlFor="select-form"
+                            className="flex-none!"
+                          >
+                            Variant
+                          </FieldLabel>
                           <Select
                             name={field.name}
                             value={field.value ?? ''}
@@ -232,6 +244,7 @@ const PrescriptionsPage = () => {
                             <SelectTrigger
                               id="select-form"
                               aria-invalid={fieldState.invalid}
+                              className="flex-1"
                             >
                               <SelectValue placeholder="Select a variant..." />
                             </SelectTrigger>

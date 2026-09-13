@@ -115,14 +115,19 @@ const MedicinesPage = () => {
           <FieldGroup>
             {fields.map((item, index) => {
               return (
-                <FieldGroup key={item.id}>
+                <FieldGroup key={item.id} className="flex flex-row gap-2">
                   <Controller
                     name={`variants.${index}.form` as const}
                     control={control}
                     render={({ field, fieldState }) => {
                       return (
                         <Field orientation="horizontal">
-                          <FieldLabel htmlFor="select-form">Form</FieldLabel>
+                          <FieldLabel
+                            htmlFor="select-form"
+                            className="flex-none!"
+                          >
+                            Form
+                          </FieldLabel>
                           <Select
                             name={field.name}
                             value={field.value ?? ''}
@@ -131,6 +136,7 @@ const MedicinesPage = () => {
                             <SelectTrigger
                               id="select-form"
                               aria-invalid={fieldState.invalid}
+                              className="flex-1"
                             >
                               <SelectValue placeholder="Select a Form..." />
                             </SelectTrigger>
@@ -153,7 +159,9 @@ const MedicinesPage = () => {
                     }}
                   />
                   <Field orientation="horizontal">
-                    <FieldLabel htmlFor="input-strength">Strength</FieldLabel>
+                    <FieldLabel htmlFor="input-strength" className="flex-none!">
+                      Strength
+                    </FieldLabel>
                     <Input
                       id="input-strength"
                       placeholder="Medicine Strength"
