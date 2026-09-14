@@ -2,6 +2,7 @@
 import express, { type Request, type Response } from 'express';
 import dotenv from 'dotenv';
 import { pool } from './db';
+import router from './routes';
 
 dotenv.config();
 
@@ -9,6 +10,8 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
+
+app.use('/', router);
 
 app.get('/test-db', async (req: Request, res: Response) => {
   try {
@@ -23,5 +26,5 @@ app.get('/test-db', async (req: Request, res: Response) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`Server running on port ${port}: http://localhost:3000/test-db`);
 });
