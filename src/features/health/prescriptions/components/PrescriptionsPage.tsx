@@ -21,7 +21,9 @@ import type {
   CreatePrescriptionRequestPayload,
   Doctor,
   Medicine,
+  MedicineVariant,
   Prescription,
+  PrescriptionMedicineFormRow,
 } from '../../../../shared/types/health';
 import {
   Controller,
@@ -36,6 +38,13 @@ import {
 import { fetchDoctors } from '@/shared/api/doctor';
 import { fetchMedicines } from '@/shared/api/medicines';
 import PrescribedMedicinesForm from './PrescribedMedicinesForm';
+import { useNavigate } from 'react-router';
+
+type LocationState = {
+  prescription: Prescription;
+  doctor: Doctor;
+  medicines: Medicine[];
+};
 
 const INITIAL_MEDICINE = {
   medicineId: '',
@@ -55,6 +64,8 @@ const INITIAL_PRESCRIPTION = {
 };
 
 const PrescriptionsPage = () => {
+  const navigate = useNavigate();
+
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
@@ -116,6 +127,34 @@ const PrescriptionsPage = () => {
 
   const handleAddPrescription = () => {
     append(INITIAL_MEDICINE);
+  };
+
+  const handlePrescriptionNav = (prescription: Prescription) => {
+    const selectedPrescriptionDoctor = doctors.find(
+      (doctor) => doctor.id === prescription.doctorId,
+    );
+    const selectedPrescriptionMedicine = prescription.medicines?.map(
+      (prescribedMedicine: PrescriptionMedicineFormRow) => {
+        const result = medicines.find(
+          (medicine: Medicine) => medicine.id === prescribedMedicine.medicineId,
+        );
+        if (result?.variants && result.variants.length) {
+          const selectedVariant = result?.variants?.find(
+            (variant: MedicineVariant) =>
+              variant.id === prescribedMedicine.medicineVariantId,
+          );
+          if (selectedVariant) result.variants = [selectedVariant];
+        }
+        return result;
+      },
+    );
+    navigate(`${prescription.id}`, {
+      state: {
+        prescription,
+        doctor: selectedPrescriptionDoctor,
+        medicines: selectedPrescriptionMedicine,
+      } as LocationState,
+    });
   };
 
   return (
@@ -219,9 +258,14 @@ const PrescriptionsPage = () => {
           </tr>
         </thead>
         <tbody>
-          {prescriptions.map(({ id, doctorId, date, notes }, index) => {
+          {prescriptions.map((prescription, index) => {
+            const { id, doctorId, date, notes } = prescription;
             return (
-              <tr key={id}>
+              <tr
+                key={id}
+                className="cursor-pointer"
+                onClick={() => handlePrescriptionNav(prescription)}
+              >
                 <td className="px-2 border">{index + 1}</td>
                 <td className="px-2 border">{doctorId}</td>
                 <td className="px-2 border">{date}</td>
