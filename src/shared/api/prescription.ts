@@ -14,3 +14,22 @@ export const createPrescription = async (
 
   return savedPrescription;
 };
+
+export const fetchPrescriptions = async ({
+  signal,
+}: {
+  signal: AbortSignal;
+}) => {
+  try {
+    const response = await fetch('/api/prescriptions', { signal });
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Success:', data);
+
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
+};

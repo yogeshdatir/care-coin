@@ -21,7 +21,6 @@ import type {
   CreatePrescriptionRequestPayload,
   Doctor,
   Medicine,
-  MedicineVariant,
   Prescription,
 } from '../../../../shared/types/health';
 import {
@@ -30,9 +29,13 @@ import {
   useForm,
   type SubmitHandler,
 } from 'react-hook-form';
-import { createPrescription } from '@/shared/api/prescription';
+import {
+  createPrescription,
+  fetchPrescriptions,
+} from '@/shared/api/prescription';
 import { fetchDoctors } from '@/shared/api/doctor';
 import { fetchMedicines } from '@/shared/api/medicines';
+import PrescribedMedicinesForm from './PrescribedMedicinesForm';
 
 const INITIAL_MEDICINE = {
   medicineId: '',
@@ -71,6 +74,18 @@ const PrescriptionsPage = () => {
       setMedicines(fetchedMedicines?.data || []);
     };
     getMedicines();
+    const getPrescriptions = async () => {
+      const fetchedPrescriptions: { data: Prescription[] } =
+        await fetchPrescriptions({
+          signal,
+        });
+      setPrescriptions(fetchedPrescriptions?.data || []);
+    };
+    getPrescriptions();
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   const { register, handleSubmit, reset, control } = useForm({
@@ -181,105 +196,12 @@ const PrescriptionsPage = () => {
 
         <FieldSet>
           <FieldLegend>Medicines</FieldLegend>
-          <FieldGroup>
-            {fields.map((item, index) => {
-              const variantOptions: MedicineVariant[] = [];
-              return (
-                <FieldGroup key={item.id} className="flex flex-row gap-2">
-                  <Controller
-                    name={`medicines.${index}.medicineId` as const}
-                    control={control}
-                    render={({ field, fieldState }) => {
-                      return (
-                        <Field orientation="horizontal">
-                          <FieldLabel
-                            htmlFor="select-form"
-                            className="flex-none!"
-                          >
-                            Name
-                          </FieldLabel>
-                          <Select
-                            name={field.name}
-                            value={field.value ?? ''}
-                            onValueChange={field.onChange}
-                          >
-                            <SelectTrigger
-                              id="select-form"
-                              aria-invalid={fieldState.invalid}
-                              className="flex-1"
-                            >
-                              <SelectValue placeholder="Select a medicine..." />
-                            </SelectTrigger>
-                            <SelectContent position="popper">
-                              <SelectGroup>
-                                {medicines.map(
-                                  ({ id: value, name: label }: Medicine) => {
-                                    return (
-                                      <SelectItem key={value} value={value}>
-                                        {label}
-                                      </SelectItem>
-                                    );
-                                  },
-                                )}
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        </Field>
-                      );
-                    }}
-                  />
-                  <Controller
-                    name={`medicines.${index}.medicineVariantId` as const}
-                    control={control}
-                    render={({ field, fieldState }) => {
-                      return (
-                        <Field orientation="horizontal">
-                          <FieldLabel
-                            htmlFor="select-form"
-                            className="flex-none!"
-                          >
-                            Variant
-                          </FieldLabel>
-                          <Select
-                            name={field.name}
-                            value={field.value ?? ''}
-                            onValueChange={field.onChange}
-                          >
-                            <SelectTrigger
-                              id="select-form"
-                              aria-invalid={fieldState.invalid}
-                              className="flex-1"
-                            >
-                              <SelectValue placeholder="Select a variant..." />
-                            </SelectTrigger>
-                            <SelectContent position="popper">
-                              <SelectGroup>
-                                {variantOptions.map(
-                                  ({
-                                    id: value,
-                                    form: label,
-                                  }: MedicineVariant) => {
-                                    return (
-                                      <SelectItem key={value} value={value}>
-                                        {label}
-                                      </SelectItem>
-                                    );
-                                  },
-                                )}
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        </Field>
-                      );
-                    }}
-                  />
-                  <Button type="button" onClick={() => remove(index)}>
-                    Remove
-                  </Button>
-                </FieldGroup>
-              );
-            })}
-          </FieldGroup>
+          <PrescribedMedicinesForm
+            fields={fields}
+            control={control}
+            medicines={medicines}
+            remove={remove}
+          />
           <Button type="button" onClick={handleAddPrescription}>
             Add Another Prescribed Medicine
           </Button>
