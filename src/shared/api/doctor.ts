@@ -1,34 +1,38 @@
-import type { CreateDoctorRequestPayload, Doctor } from '../types';
+import type { CreateDoctorRequestPayload } from '../types';
 
-export const createDoctor = async (data: CreateDoctorRequestPayload) => {
-  const { name, specialty, clinicName, city, phone, notes } = data;
-  await new Promise((resolve) => setTimeout(resolve, 300));
+export const createDoctor = async (payload: CreateDoctorRequestPayload) => {
+  try {
+    const response = await fetch('/api/doctor', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
 
-  const doctorId = crypto.randomUUID();
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Success:', data);
 
-  const savedDoctor = {
-    id: doctorId,
-    name,
-    specialty,
-    clinicName,
-    city,
-    phone,
-    notes,
-  };
-
-  return savedDoctor;
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
 };
 
-export const fetchDoctors = async () => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
+export const fetchDoctors = async ({ signal }: { signal: AbortSignal }) => {
+  try {
+    const response = await fetch('/api/doctors', { signal });
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Success:', data);
 
-  const doctors: Doctor[] = [
-    {
-      id: '0',
-      name: 'test',
-      city: 'pune',
-    },
-  ];
-
-  return doctors;
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
 };

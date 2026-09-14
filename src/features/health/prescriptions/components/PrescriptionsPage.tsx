@@ -57,9 +57,11 @@ const PrescriptionsPage = () => {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
     const getDoctors = async () => {
-      const fetchedDoctors: Doctor[] = await fetchDoctors();
-      setDoctors(fetchedDoctors);
+      const fetchedDoctors: { data: Doctor[] } = await fetchDoctors({ signal });
+      setDoctors(fetchedDoctors?.data || []);
     };
     getDoctors();
     const getMedicines = async () => {

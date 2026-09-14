@@ -1,4 +1,4 @@
-import { createDoctor } from '@/shared/api/doctor';
+import { createDoctor, fetchDoctors } from '@/shared/api/doctor';
 import { Button } from '@/shared/components/ui/button';
 import {
   FieldLabel,
@@ -10,7 +10,7 @@ import {
 import { Input } from '@/shared/components/ui/input';
 import { Textarea } from '@/shared/components/ui/textarea';
 import type { CreateDoctorRequestPayload, Doctor } from '@/shared/types';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 
 const INITIAL_DOCTOR: CreateDoctorRequestPayload = {
@@ -28,6 +28,16 @@ const DoctorsPage = () => {
   const { register, handleSubmit, reset } = useForm({
     defaultValues: INITIAL_DOCTOR,
   });
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+    const getDoctors = async () => {
+      const fetchedDoctors: { data: Doctor[] } = await fetchDoctors({ signal });
+      setDoctors(fetchedDoctors?.data || []);
+    };
+    getDoctors();
+  }, []);
 
   const handleAddNewDoctor: SubmitHandler<CreateDoctorRequestPayload> = async (
     data,
@@ -130,8 +140,8 @@ const DoctorsPage = () => {
                 <tr key={id}>
                   <td className="px-2 border">{index + 1}</td>
                   <td className="px-2 border">{name}</td>
-                  <td className="px-2 border">{clinicName}</td>
                   <td className="px-2 border">{specialty}</td>
+                  <td className="px-2 border">{clinicName}</td>
                   <td className="px-2 border">{city}</td>
                   <td className="px-2 border">{phone}</td>
                   <td className="px-2 border">{notes}</td>
