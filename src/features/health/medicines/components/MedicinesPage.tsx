@@ -1,4 +1,4 @@
-import { createMedicine } from '@/shared/api/medicines';
+import { createMedicine, fetchMedicines } from '@/shared/api/medicines';
 import { Button } from '@/shared/components/ui/button';
 import {
   Field,
@@ -23,7 +23,7 @@ import {
   type MedicineFormItem,
   type CreateMedicineRequestPayload,
 } from '@/shared/types';
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import type { MedicineVariant } from '../../../../shared/types/health';
 import {
   Controller,
@@ -49,6 +49,22 @@ const INITIAL_MEDICINE = {
 
 const MedicinesPage = () => {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+    const getDoctors = async () => {
+      const fetchedMedicines: { data: Medicine[] } = await fetchMedicines({
+        signal,
+      });
+      setMedicines(fetchedMedicines?.data || []);
+    };
+    getDoctors();
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
 
   const { register, handleSubmit, control, reset } = useForm({
     defaultValues: INITIAL_MEDICINE,
@@ -187,27 +203,35 @@ const MedicinesPage = () => {
           <tr>
             <th className="px-2 border">Sr No</th>
             <th className="px-2 border">Name</th>
+            <th className="px-2 border">Form</th>
+            <th className="px-2 border">Strength</th>
             <th className="px-2 border">Side Effects</th>
           </tr>
         </thead>
         <tbody>
           {medicines.map(({ id, name, sideEffects, variants }, index) => {
             return (
-              <tr key={id}>
-                <td className="px-2 border">{index + 1}</td>
-                <td className="px-2 border">{name}</td>
-                <td className="px-2 border">{sideEffects}</td>
+              <Fragment key={id}>
+                <tr>
+                  <td className="px-2 border">{index + 1}</td>
+                  <td className="px-2 border capitalize">{name}</td>
+                  <td className="px-2 border"></td>
+                  <td className="px-2 border"></td>
+                  <td className="px-2 border">{sideEffects}</td>
+                </tr>
+
                 {variants && variants?.length > 0 ? (
                   <>
                     {variants.map(({ id, form, strength }: MedicineVariant) => (
-                      <Fragment key={id}>
-                        <td className="px-2 border">{form}</td>
+                      <tr key={id}>
+                        <td colSpan={2}></td>
+                        <td className="px-2 border capitalize">{form}</td>
                         <td className="px-2 border">{strength}</td>
-                      </Fragment>
+                      </tr>
                     ))}
                   </>
                 ) : null}
-              </tr>
+              </Fragment>
             );
           })}
         </tbody>

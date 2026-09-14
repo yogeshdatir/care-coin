@@ -65,8 +65,10 @@ const PrescriptionsPage = () => {
     };
     getDoctors();
     const getMedicines = async () => {
-      const fetchedMedicines = await fetchMedicines();
-      setMedicines(fetchedMedicines);
+      const fetchedMedicines: { data: Medicine[] } = await fetchMedicines({
+        signal,
+      });
+      setMedicines(fetchedMedicines?.data || []);
     };
     getMedicines();
   }, []);

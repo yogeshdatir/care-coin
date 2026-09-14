@@ -37,6 +37,10 @@ const DoctorsPage = () => {
       setDoctors(fetchedDoctors?.data || []);
     };
     getDoctors();
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   const handleAddNewDoctor: SubmitHandler<CreateDoctorRequestPayload> = async (

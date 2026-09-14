@@ -1,28 +1,38 @@
-import type { CreateMedicineRequestPayload, Medicine } from '../types';
+import type { CreateMedicineRequestPayload } from '../types';
 
-export const createMedicine = async (data: CreateMedicineRequestPayload) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
+export const createMedicine = async (payload: CreateMedicineRequestPayload) => {
+  try {
+    const response = await fetch('/api/medicine', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
 
-  const medicineId = crypto.randomUUID();
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Success:', data);
 
-  const savedMedicine = {
-    id: medicineId,
-    name: data.name,
-    sideEffects: data.sideEffects,
-    variants: (data?.variants ?? []).map((medicineVariant) => ({
-      ...medicineVariant,
-      id: crypto.randomUUID(),
-      medicineId,
-    })),
-  };
-
-  return savedMedicine;
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
 };
 
-export const fetchMedicines = async () => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
+export const fetchMedicines = async ({ signal }: { signal: AbortSignal }) => {
+  try {
+    const response = await fetch('/api/medicines', { signal });
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Success:', data);
 
-  const medicines: Medicine[] = [];
-
-  return medicines;
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
 };
