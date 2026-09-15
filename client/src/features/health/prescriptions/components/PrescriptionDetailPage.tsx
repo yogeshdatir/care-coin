@@ -1,4 +1,4 @@
-import type { Medicine } from '@/shared/types';
+import type { Medicine } from '@carecoin/shared-types';
 import { useLocation } from 'react-router';
 
 const PrescriptionDetailPage = () => {

@@ -19,12 +19,12 @@ import {
 import { Textarea } from '@/shared/components/ui/textarea';
 import {
   MEDICINE_FORMS,
+  type CreateMedicineRequestPayload,
   type Medicine,
   type MedicineFormItem,
-  type CreateMedicineRequestPayload,
-} from '@/shared/types';
+  type MedicineVariant,
+} from '@carecoin/shared-types';
 import { Fragment, useEffect, useState } from 'react';
-import type { MedicineVariant } from '../../../../shared/types/health';
 import {
   Controller,
   useFieldArray,

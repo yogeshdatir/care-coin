@@ -1,4 +1,4 @@
-import type { Prescription } from '@/shared/types';
+import type { Prescription } from '@carecoin/shared-types';
 
 export const dummyPrescriptions: Prescription[] = [
   {

@@ -17,14 +17,6 @@ import {
 } from '@/shared/components/ui/select';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { useEffect, useState } from 'react';
-import type {
-  CreatePrescriptionRequestPayload,
-  Doctor,
-  Medicine,
-  MedicineVariant,
-  Prescription,
-  PrescriptionMedicineFormRow,
-} from '../../../../shared/types/health';
 import {
   Controller,
   useFieldArray,
@@ -39,6 +31,14 @@ import { fetchDoctors } from '@/shared/api/doctor';
 import { fetchMedicines } from '@/shared/api/medicines';
 import PrescribedMedicinesForm from './PrescribedMedicinesForm';
 import { useNavigate } from 'react-router';
+import type {
+  CreatePrescriptionRequestPayload,
+  Doctor,
+  Medicine,
+  MedicineVariant,
+  Prescription,
+  PrescriptionMedicineFormRow,
+} from '@carecoin/shared-types';
 
 type LocationState = {
   prescription: Prescription;
