@@ -4,6 +4,7 @@ import type {
   MedicineVariant,
   CreateMedicineRequestPayload,
 } from '@carecoin/shared-types';
+import { emptyToNull } from '../../shared/utils';
 
 function mapVariantRow(row: any): MedicineVariant {
   return {
@@ -52,7 +53,7 @@ export async function createMedicine(
 
     const medicineResult = await client.query(
       `INSERT INTO medicines (name, side_effects) VALUES ($1, $2) RETURNING *`,
-      [payload.name, payload.sideEffects ?? null],
+      [payload.name, emptyToNull(payload.sideEffects)],
     );
     const medicineRow = medicineResult.rows[0];
 
@@ -60,7 +61,11 @@ export async function createMedicine(
     for (const variant of payload.variants ?? []) {
       const variantResult = await client.query(
         `INSERT INTO medicine_variants (medicine_id, form, strength) VALUES ($1, $2, $3) RETURNING *`,
-        [medicineRow.id, variant.form ?? null, variant.strength ?? null],
+        [
+          medicineRow.id,
+          emptyToNull(variant.form),
+          emptyToNull(variant.strength),
+        ],
       );
       variants.push(mapVariantRow(variantResult.rows[0]));
     }

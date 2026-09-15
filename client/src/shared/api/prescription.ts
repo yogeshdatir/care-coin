@@ -1,18 +1,28 @@
 import type { CreatePrescriptionRequestPayload } from '@carecoin/shared-types';
+import { API_BASE_URL } from './config';
 
 export const createPrescription = async (
-  data: CreatePrescriptionRequestPayload,
+  payload: CreatePrescriptionRequestPayload,
 ) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  try {
+    const response = await fetch(`${API_BASE_URL}/prescriptions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
 
-  const prescriptionId = crypto.randomUUID();
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Success:', data);
 
-  const savedPrescription = {
-    id: prescriptionId,
-    ...data,
-  };
-
-  return savedPrescription;
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 export const fetchPrescriptions = async ({
@@ -21,7 +31,7 @@ export const fetchPrescriptions = async ({
   signal: AbortSignal;
 }) => {
   try {
-    const response = await fetch('/api/prescriptions', { signal });
+    const response = await fetch(`${API_BASE_URL}/prescriptions`, { signal });
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }

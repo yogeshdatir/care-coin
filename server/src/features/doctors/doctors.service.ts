@@ -3,6 +3,7 @@ import type {
   CreateDoctorRequestPayload,
 } from '@carecoin/shared-types';
 import { pool } from '../../db/pool';
+import { emptyToNull } from '../../shared/utils';
 
 function mapRowToDoctor(row: any): Doctor {
   return {
@@ -30,11 +31,11 @@ export async function createDoctor(
      RETURNING *`,
     [
       payload.name,
-      payload.specialty ?? null,
-      payload.clinicName ?? null,
+      emptyToNull(payload.specialty),
+      emptyToNull(payload.clinicName),
       payload.city,
-      payload.phone ?? null,
-      payload.notes ?? null,
+      emptyToNull(payload.phone),
+      emptyToNull(payload.notes),
     ],
   );
   return mapRowToDoctor(result.rows[0]);
