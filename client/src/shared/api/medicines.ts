@@ -1,8 +1,9 @@
 import type { CreateMedicineRequestPayload } from '@carecoin/shared-types';
+import { API_BASE_URL } from './config';
 
 export const createMedicine = async (payload: CreateMedicineRequestPayload) => {
   try {
-    const response = await fetch('/api/medicine', {
+    const response = await fetch(`${API_BASE_URL}/medicines`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -24,7 +25,7 @@ export const createMedicine = async (payload: CreateMedicineRequestPayload) => {
 
 export const fetchMedicines = async ({ signal }: { signal: AbortSignal }) => {
   try {
-    const response = await fetch('/api/medicines', { signal });
+    const response = await fetch(`${API_BASE_URL}/medicines`, { signal });
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
