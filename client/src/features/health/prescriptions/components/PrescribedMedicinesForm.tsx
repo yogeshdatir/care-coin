@@ -8,7 +8,7 @@ import {
   SelectItem,
   Select,
 } from '@/shared/components/ui/select';
-import type { MedicineVariant, Medicine } from '@/shared/types';
+import type { Medicine, MedicineVariant } from '@shared/types';
 import { useState } from 'react';
 import {
   Controller,

@@ -1,4 +1,4 @@
-import type { Doctor } from '@/shared/types';
+import type { Doctor } from '@shared/types';
 
 export const dummyDoctors: Doctor[] = [
   {

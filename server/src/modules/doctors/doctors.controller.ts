@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { doctorsRepository } from './doctors.repository';
 
 export const doctorsController = {

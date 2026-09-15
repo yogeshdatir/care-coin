@@ -1,4 +1,4 @@
-import type { CreateMedicineRequestPayload } from '../types';
+import type { CreateMedicineRequestPayload } from '@shared/types';
 
 export const createMedicine = async (payload: CreateMedicineRequestPayload) => {
   try {

@@ -1,6 +1,6 @@
 import { delay, http, HttpResponse } from 'msw';
 import { dummyDoctors } from '../data/doctors.data';
-import type { CreateDoctorRequestPayload, Doctor } from '@/shared/types';
+import type { CreateDoctorRequestPayload, Doctor } from '@shared/types';
 
 export const doctorHandlers = [
   http.get('/api/doctors', async () => {
