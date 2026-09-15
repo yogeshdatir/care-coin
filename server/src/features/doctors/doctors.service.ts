@@ -40,3 +40,41 @@ export async function createDoctor(
   );
   return mapRowToDoctor(result.rows[0]);
 }
+
+export async function deleteDoctor(id: string): Promise<void> {
+  const result = await pool.query('DELETE FROM doctors WHERE id = $1', [id]);
+  if (result.rowCount === 0) {
+    const error = new Error('Doctor not found');
+    (error as any).status = 404;
+    throw error;
+  }
+}
+
+export async function updateDoctor(
+  id: string,
+  payload: CreateDoctorRequestPayload,
+): Promise<Doctor> {
+  const result = await pool.query(
+    `UPDATE doctors
+     SET name = $1, specialty = $2, clinic_name = $3, city = $4, phone = $5, notes = $6
+     WHERE id = $7
+     RETURNING *`,
+    [
+      payload.name,
+      emptyToNull(payload.specialty),
+      emptyToNull(payload.clinicName),
+      payload.city,
+      emptyToNull(payload.phone),
+      emptyToNull(payload.notes),
+      id,
+    ],
+  );
+
+  if (result.rows.length === 0) {
+    const error = new Error('Doctor not found');
+    (error as any).status = 404;
+    throw error;
+  }
+
+  return mapRowToDoctor(result.rows[0]);
+}

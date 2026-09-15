@@ -1,4 +1,4 @@
-import { createDoctor, fetchDoctors } from '@/shared/api/doctor';
+import { createDoctor, deleteDoctor, fetchDoctors } from '@/shared/api/doctor';
 import { Button } from '@/shared/components/ui/button';
 import {
   FieldLabel,
@@ -15,6 +15,8 @@ import type {
 } from '@carecoin/shared-types';
 import { useEffect, useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { Pencil } from 'lucide-react';
 
 const INITIAL_DOCTOR: CreateDoctorRequestPayload = {
   name: '',
@@ -55,6 +57,16 @@ const DoctorsPage = () => {
     setDoctors((prev) => [...prev, response]);
     reset(INITIAL_DOCTOR);
   };
+
+  const handleDeleteDoctor = async (id: Doctor['id']) => {
+    await deleteDoctor(id);
+    const updatedDoctors = doctors.filter((doctor: Doctor) => doctor.id !== id);
+    setDoctors(updatedDoctors);
+  };
+
+  // const handleEdit = (doctor: Doctor) => {
+
+  // }
 
   return (
     <>
@@ -137,6 +149,7 @@ const DoctorsPage = () => {
             <th className="px-2 border">City</th>
             <th className="px-2 border">Phone</th>
             <th className="px-2 border">Notes</th>
+            <th className="px-2 border"></th>
           </tr>
         </thead>
         <tbody>
@@ -154,6 +167,21 @@ const DoctorsPage = () => {
                   <td className="px-2 border">{city}</td>
                   <td className="px-2 border">{phone}</td>
                   <td className="px-2 border">{notes}</td>
+                  <td className="px-2 border">
+                    <div className="flex gap-1">
+                      <Button
+                        variant="secondary"
+                        className="cursor-pointer"
+                        // onClick={handleEdit}
+                      >
+                        <Pencil />
+                      </Button>
+                      <DeleteConfirmationDialog
+                        id={id}
+                        handleAction={handleDeleteDoctor}
+                      />
+                    </div>
+                  </td>
                 </tr>
               );
             },
