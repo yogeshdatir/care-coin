@@ -3,7 +3,7 @@ import { dummyPrescriptions } from '../data/prescriptions.data';
 import type {
   CreatePrescriptionRequestPayload,
   Prescription,
-} from '@shared/types';
+} from '@carecoin/shared-types';
 
 export const prescriptionHandlers = [
   http.get('/api/prescriptions', async () => {

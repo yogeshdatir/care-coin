@@ -38,7 +38,7 @@ import type {
   MedicineVariant,
   Prescription,
   PrescriptionMedicineFormRow,
-} from '@shared/types';
+} from '@carecoin/shared-types';
 
 type LocationState = {
   prescription: Prescription;

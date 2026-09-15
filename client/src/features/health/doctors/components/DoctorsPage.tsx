@@ -9,7 +9,10 @@ import {
 } from '@/shared/components/ui/field';
 import { Input } from '@/shared/components/ui/input';
 import { Textarea } from '@/shared/components/ui/textarea';
-import type { CreateDoctorRequestPayload, Doctor } from '@shared/types';
+import type {
+  CreateDoctorRequestPayload,
+  Doctor,
+} from '@carecoin/shared-types';
 import { useEffect, useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 

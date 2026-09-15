@@ -1,10 +1,12 @@
 {
-  "name": "my-monorepo",
+  "name": "@carecoin/root",
   "private": true,
   "scripts": {
-    "clean:cache": "rimraf **/tsconfig.tsbuildinfo",
+    "dev": "concurrently -n types,client,server -c yellow,cyan,green \"yarn workspace @carecoin/shared-types dev\" \"yarn workspace @carecoin/client dev\" \"yarn workspace @carecoin/server dev\"",
     "clean": "rimraf node_modules client/node_modules server/node_modules packages/*/node_modules",
-    "reset": "yarn clean && yarn install"
+    "clean:cache": "rimraf **/tsconfig.tsbuildinfo",
+    "reset": "yarn clean && yarn install",
+    "build": "yarn workspace @carecoin/shared-types build && yarn workspace @carecoin/client build && yarn workspace @carecoin/server build"
   },
   "workspaces": [
     "client",
@@ -12,6 +14,7 @@
     "packages/*"
   ],
   "devDependencies": {
+    "concurrently": "^10.0.5",
     "rimraf": "^6.1.3"
   }
 }

@@ -41,10 +41,7 @@
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true,
-    "paths": {
-      "@shared/types": ["../packages/shared-types/src/index.ts"]
-    }
+    "skipLibCheck": true
   },
   "references": [{ "path": "../packages/shared-types" }]
 }

@@ -1,4 +1,4 @@
-import type { Doctor } from '@shared/types';
+import type { Doctor } from '@carecoin/shared-types';
 import { pool } from '../../db';
 
 export const doctorsRepository = {

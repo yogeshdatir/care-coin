@@ -23,7 +23,7 @@ import {
   type Medicine,
   type MedicineFormItem,
   type MedicineVariant,
-} from '@shared/types';
+} from '@carecoin/shared-types';
 import { Fragment, useEffect, useState } from 'react';
 import {
   Controller,

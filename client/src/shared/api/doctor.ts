@@ -1,4 +1,4 @@
-import type { CreateDoctorRequestPayload } from '@shared/types';
+import type { CreateDoctorRequestPayload } from '@carecoin/shared-types';
 
 export const createDoctor = async (payload: CreateDoctorRequestPayload) => {
   try {
