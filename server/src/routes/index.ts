@@ -1,8 +1,6 @@
 import { Router } from 'express';
-import doctorsRoutes from '../modules/doctors/doctors.routes';
+import { doctorsRouter } from '../features/doctors/doctors.routes';
 
-const router = Router();
+export const apiRouter = Router();
 
-router.use('/doctors', doctorsRoutes);
-
-export default router;
+apiRouter.use('/doctors', doctorsRouter);
