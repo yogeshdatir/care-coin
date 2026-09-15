@@ -1,5 +1,5 @@
+import type { Doctor } from '@shared/types';
 import { pool } from '../../db';
-import { Doctor, CreateDoctorInput } from './doctors.types';
 
 export const doctorsRepository = {
   async findAll(): Promise<Doctor[]> {

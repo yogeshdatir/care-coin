@@ -9,10 +9,10 @@
     // See also https://aka.ms/tsconfig/module
     "module": "esnext",
     "target": "esnext",
-    // "types": [],
+    "types": [],
     // For nodejs:
-    "lib": ["esnext"],
-    "types": ["node"],
+    // "lib": ["esnext"],
+    // "types": ["node"],
     // and npm install -D @types/node
 
     // Other Outputs
@@ -32,19 +32,15 @@
     // "noFallthroughCasesInSwitch": true,
     // "noPropertyAccessFromIndexSignature": true,
 
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    "composite": true,
 
     // Recommended Options
     "strict": true,
+    "jsx": "react-jsx",
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true,
-    "paths": {
-      "@shared/types": ["../packages/shared-types/src/index.ts"]
-    }
-  },
-  "references": [{ "path": "../packages/shared-types" }]
+    "skipLibCheck": true
+  }
 }

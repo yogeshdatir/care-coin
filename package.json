@@ -1,0 +1,17 @@
+{
+  "name": "my-monorepo",
+  "private": true,
+  "scripts": {
+    "clean:cache": "rimraf **/tsconfig.tsbuildinfo",
+    "clean": "rimraf node_modules client/node_modules server/node_modules packages/*/node_modules",
+    "reset": "yarn clean && yarn install"
+  },
+  "workspaces": [
+    "client",
+    "server",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "rimraf": "^6.1.3"
+  }
+}
