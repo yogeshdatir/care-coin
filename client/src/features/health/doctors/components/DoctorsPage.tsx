@@ -36,7 +36,9 @@ const DoctorsPage = () => {
     const controller = new AbortController();
     const { signal } = controller;
     const getDoctors = async () => {
-      const fetchedDoctors: { data: Doctor[] } = await fetchDoctors({ signal });
+      const fetchedDoctors: { data: Doctor[] } | undefined = await fetchDoctors(
+        { signal },
+      );
       setDoctors(fetchedDoctors?.data || []);
     };
     getDoctors();

@@ -74,7 +74,9 @@ const PrescriptionsPage = () => {
     const controller = new AbortController();
     const { signal } = controller;
     const getDoctors = async () => {
-      const fetchedDoctors: { data: Doctor[] } = await fetchDoctors({ signal });
+      const fetchedDoctors: { data: Doctor[] } | undefined = await fetchDoctors(
+        { signal },
+      );
       setDoctors(fetchedDoctors?.data || []);
     };
     getDoctors();
@@ -129,10 +131,13 @@ const PrescriptionsPage = () => {
     append(INITIAL_MEDICINE);
   };
 
-  const handlePrescriptionNav = (prescription: Prescription) => {
-    const selectedPrescriptionDoctor = doctors.find(
-      (doctor) => doctor.id === prescription.doctorId,
-    );
+  const handlePrescriptionNav = ({
+    prescription,
+    currentPrescriptionDoctor,
+  }: {
+    prescription: Prescription;
+    currentPrescriptionDoctor: Doctor | undefined;
+  }) => {
     const selectedPrescriptionMedicine = prescription.medicines?.map(
       (prescribedMedicine: PrescriptionMedicineFormRow) => {
         const result = medicines.find(
@@ -151,7 +156,7 @@ const PrescriptionsPage = () => {
     navigate(`${prescription.id}`, {
       state: {
         prescription,
-        doctor: selectedPrescriptionDoctor,
+        doctor: currentPrescriptionDoctor,
         medicines: selectedPrescriptionMedicine,
       } as LocationState,
     });
@@ -260,14 +265,26 @@ const PrescriptionsPage = () => {
         <tbody>
           {prescriptions.map((prescription, index) => {
             const { id, doctorId, date, notes } = prescription;
+
+            const currentPrescriptionDoctor = doctors.find(
+              (doctor) => doctor.id === doctorId,
+            );
+
             return (
               <tr
                 key={id}
                 className="cursor-pointer"
-                onClick={() => handlePrescriptionNav(prescription)}
+                onClick={() =>
+                  handlePrescriptionNav({
+                    prescription,
+                    currentPrescriptionDoctor,
+                  })
+                }
               >
                 <td className="px-2 border">{index + 1}</td>
-                <td className="px-2 border">{doctorId}</td>
+                <td className="px-2 border">
+                  {currentPrescriptionDoctor?.name}
+                </td>
                 <td className="px-2 border">{date}</td>
                 <td className="px-2 border">{notes}</td>
               </tr>

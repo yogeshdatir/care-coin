@@ -30,7 +30,7 @@ export const fetchDoctors = async ({
   signal,
 }: {
   signal: AbortSignal;
-}): Promise<Doctor[] | undefined> => {
+}): Promise<{ data: Doctor[] } | undefined> => {
   try {
     const response = await fetch(`${API_BASE_URL}/doctors`, { signal });
     if (!response.ok) {

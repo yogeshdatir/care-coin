@@ -1,19 +1,21 @@
 import type { Medicine } from '@carecoin/shared-types';
-import { useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router';
 
 const PrescriptionDetailPage = () => {
   const location = useLocation();
 
-  const { prescription, doctor, medicines } = location.state;
-  const { date } = prescription;
-  const { name } = doctor;
+  const { prescription, doctor, medicines } = location.state || {};
+  const { date } = prescription || {};
+  const { name, id: doctorId } = doctor || {};
 
   console.log({ location });
   return (
     <div>
       <p>
         <span>Doctor: </span>
-        <span>{name}</span>
+        <Link to={`/doctor/${doctorId}`} state={{ doctor }}>
+          <span>{name}</span>
+        </Link>
       </p>
       <p>
         <span>Date: </span>

@@ -78,7 +78,6 @@ const PrescribedMedicinesForm = ({
                     return medicine.id === value;
                   })?.variants ?? [],
                 );
-                console.log(variantOptions);
               };
               return (
                 <Field orientation="horizontal" className="max-w-[50%]">
