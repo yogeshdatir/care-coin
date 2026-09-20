@@ -1,13 +1,5 @@
 import { Button } from '@/shared/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/shared/components/ui/field';
-import {
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  Select,
-} from '@/shared/components/ui/select';
 import type { Medicine, MedicineVariant } from '@carecoin/shared-types';
 import { useState } from 'react';
 import {
@@ -15,6 +7,9 @@ import {
   type Control,
   type UseFieldArrayReturn,
 } from 'react-hook-form';
+import CreatableCombobox from './CreatableCombobox';
+import { createMedicine, createVariant } from '@/shared/api/medicines';
+import VariantRenderer from './VariantRenderer';
 
 type Props = {
   fields: UseFieldArrayReturn['fields'];
@@ -51,6 +46,7 @@ type Props = {
     }
   >;
   medicines: Medicine[];
+  setMedicines: React.Dispatch<React.SetStateAction<Medicine[]>>;
   remove: UseFieldArrayReturn['remove'];
 };
 
@@ -58,9 +54,26 @@ const PrescribedMedicinesForm = ({
   fields,
   control,
   medicines,
+  setMedicines,
   remove,
 }: Props) => {
   const [variantOptions, setVariantOptions] = useState<MedicineVariant[]>([]);
+
+  const handleCreateMedicine = async (medicineName: string) => {
+    const newMedicine = await createMedicine({ name: medicineName });
+    setMedicines((prev) => [...prev, newMedicine]);
+    return newMedicine;
+  };
+
+  const handleCreateVariant = async (
+    medicineId: Medicine['id'],
+    medicineVariant: string,
+  ) => {
+    const [form, strength] = medicineVariant.split(' - ');
+    const newVariant = await createVariant(medicineId, { form, strength });
+    setVariantOptions((prev) => [...prev, newVariant]);
+    return newVariant;
+  };
 
   return (
     <FieldGroup>
@@ -70,92 +83,62 @@ const PrescribedMedicinesForm = ({
             name={`medicines.${index}.medicineId` as const}
             control={control}
             rules={{ required: true }}
-            render={({ field, fieldState }) => {
-              const handleMedicineSelect = (value: string) => {
-                field.onChange(value);
-                setVariantOptions(
-                  medicines.find((medicine: Medicine) => {
-                    return medicine.id === value;
-                  })?.variants ?? [],
-                );
+            render={({ field }) => {
+              const handleMedicineSelect = (
+                selectedMedicine: Medicine[] | Medicine | null,
+              ) => {
+                if (selectedMedicine && !Array.isArray(selectedMedicine)) {
+                  field.onChange(selectedMedicine.id);
+                  setVariantOptions(
+                    medicines.find((medicine: Medicine) => {
+                      return medicine.id === selectedMedicine.id;
+                    })?.variants ?? [],
+                  );
+                }
               };
+
               return (
                 <Field orientation="horizontal" className="max-w-[50%]">
                   <FieldLabel htmlFor="select-form" className="flex-none!">
                     Name <span className="text-destructive">*</span>
                   </FieldLabel>
-                  <Select
-                    name={field.name}
-                    value={field.value ?? ''}
-                    onValueChange={handleMedicineSelect}
-                  >
-                    <SelectTrigger
-                      id="select-form"
-                      aria-invalid={fieldState.invalid}
-                      className="flex-1"
-                    >
-                      <SelectValue placeholder="Select a medicine..." />
-                    </SelectTrigger>
-                    <SelectContent position="popper">
-                      <SelectGroup>
-                        {medicines.map(
-                          ({ id: value, name: label }: Medicine) => {
-                            return (
-                              <SelectItem key={value} value={value}>
-                                {label}
-                              </SelectItem>
-                            );
-                          },
-                        )}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                  <CreatableCombobox<Medicine>
+                    options={medicines}
+                    getOptionLabel={(option) => option.name}
+                    getOptionValue={(option) => option.id}
+                    value={field.value}
+                    onChange={handleMedicineSelect}
+                    onCreate={handleCreateMedicine}
+                  />
                 </Field>
               );
             }}
           />
-          {variantOptions?.length > 0 && (
-            <Controller
-              name={`medicines.${index}.medicineVariantId` as const}
-              control={control}
-              rules={{ required: true }}
-              render={({ field, fieldState }) => {
-                return (
-                  <Field orientation="horizontal" className="max-w-[50%]">
-                    <FieldLabel htmlFor="select-form" className="flex-none!">
-                      Variant <span className="text-destructive">*</span>
-                    </FieldLabel>
-                    <Select
-                      name={field.name}
-                      value={field.value ?? ''}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger
-                        id="select-form"
-                        aria-invalid={fieldState.invalid}
-                        className="flex-1"
-                      >
-                        <SelectValue placeholder="Select a variant..." />
-                      </SelectTrigger>
-                      <SelectContent position="popper">
-                        <SelectGroup>
-                          {variantOptions.map(
-                            ({ id: value, form: label }: MedicineVariant) => {
-                              return (
-                                <SelectItem key={value} value={value}>
-                                  {label}
-                                </SelectItem>
-                              );
-                            },
-                          )}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                );
-              }}
-            />
-          )}
+
+          <Controller
+            name={`medicines.${index}.medicineVariantId` as const}
+            control={control}
+            rules={{ required: true }}
+            render={({ field }) => {
+              const handleVariantSelect = (
+                selectedVariant: MedicineVariant[] | MedicineVariant | null,
+              ) => {
+                if (selectedVariant && !Array.isArray(selectedVariant)) {
+                  field.onChange(selectedVariant.id);
+                }
+              };
+
+              return (
+                <VariantRenderer
+                  variantOptions={variantOptions}
+                  handleCreateVariant={handleCreateVariant}
+                  handleVariantSelect={handleVariantSelect}
+                  value={field.value}
+                  index={index}
+                />
+              );
+            }}
+          />
           <Button
             type="button"
             onClick={() => remove(index)}

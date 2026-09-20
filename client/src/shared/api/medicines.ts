@@ -15,7 +15,6 @@ export const createMedicine = async (payload: CreateMedicineRequestPayload) => {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
     const data = await response.json();
-    console.log('Success:', data);
 
     return data;
   } catch (error) {
@@ -30,10 +29,34 @@ export const fetchMedicines = async ({ signal }: { signal: AbortSignal }) => {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
     const data = await response.json();
-    console.log('Success:', data);
 
     return data;
   } catch (error) {
     console.error(error);
   }
 };
+
+export async function createVariant(
+  medicineId: string,
+  payload: { form?: string; strength?: string },
+) {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/medicines/${medicineId}/variants`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = await response.json();
+
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
+}

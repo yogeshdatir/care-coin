@@ -86,7 +86,6 @@ const MedicinesPage = () => {
       ...data,
       variants: cleanedVariants,
     };
-    console.log({ finalData });
     const response: Medicine = await createMedicine(finalData);
     setMedicines((prev) => [...prev, response]);
     reset(INITIAL_MEDICINE);

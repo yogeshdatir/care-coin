@@ -17,7 +17,6 @@ export const createPrescription = async (
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
     const data = await response.json();
-    console.log('Success:', data);
 
     return data;
   } catch (error) {
@@ -36,7 +35,6 @@ export const fetchPrescriptions = async ({
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
     const data = await response.json();
-    console.log('Success:', data);
 
     return data;
   } catch (error) {

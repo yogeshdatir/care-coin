@@ -18,7 +18,6 @@ export const createDoctor = async (payload: CreateDoctorRequestPayload) => {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
     const data = await response.json();
-    console.log('Success:', data);
 
     return data;
   } catch (error) {
@@ -37,7 +36,6 @@ export const fetchDoctors = async ({
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
     const data = await response.json();
-    console.log('Success:', data);
 
     return data;
   } catch (error) {

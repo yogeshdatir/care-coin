@@ -8,7 +8,6 @@ const PrescriptionDetailPage = () => {
   const { date } = prescription || {};
   const { name, id: doctorId } = doctor || {};
 
-  console.log({ location });
   return (
     <div>
       <p>

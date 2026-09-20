@@ -79,3 +79,14 @@ export async function createMedicine(
     client.release();
   }
 }
+
+export async function createVariant(
+  medicineId: string,
+  payload: { form?: string; strength?: string },
+): Promise<MedicineVariant> {
+  const result = await pool.query(
+    `INSERT INTO medicine_variants (medicine_id, form, strength) VALUES ($1, $2, $3) RETURNING *`,
+    [medicineId, emptyToNull(payload.form), emptyToNull(payload.strength)],
+  );
+  return mapVariantRow(result.rows[0]);
+}

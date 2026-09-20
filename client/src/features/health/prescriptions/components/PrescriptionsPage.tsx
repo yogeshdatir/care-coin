@@ -19,6 +19,7 @@ import { Textarea } from '@/shared/components/ui/textarea';
 import { useEffect, useState } from 'react';
 import {
   Controller,
+  FormProvider,
   useFieldArray,
   useForm,
   type SubmitHandler,
@@ -101,9 +102,11 @@ const PrescriptionsPage = () => {
     };
   }, []);
 
-  const { register, handleSubmit, reset, control } = useForm({
+  const form = useForm({
     defaultValues: INITIAL_PRESCRIPTION,
   });
+
+  const { register, handleSubmit, reset, control } = form;
 
   const handleAddNewPrescription: SubmitHandler<
     CreatePrescriptionRequestPayload
@@ -116,7 +119,6 @@ const PrescriptionsPage = () => {
       ...data,
       medicines: cleanedMedicines,
     };
-    console.log(finalData);
     const response: Prescription = await createPrescription(finalData);
     setPrescriptions((prev) => [...prev, response]);
     reset(INITIAL_PRESCRIPTION);
@@ -163,7 +165,7 @@ const PrescriptionsPage = () => {
   };
 
   return (
-    <>
+    <FormProvider {...form}>
       <form
         onSubmit={handleSubmit(handleAddNewPrescription)}
         className="flex flex-col gap-3 py-3 min-w-100"
@@ -244,6 +246,7 @@ const PrescriptionsPage = () => {
             fields={fields}
             control={control}
             medicines={medicines}
+            setMedicines={setMedicines}
             remove={remove}
           />
           <Button type="button" onClick={handleAddPrescription}>
@@ -292,7 +295,7 @@ const PrescriptionsPage = () => {
           })}
         </tbody>
       </table>
-    </>
+    </FormProvider>
   );
 };
 
