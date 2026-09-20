@@ -43,6 +43,7 @@ const VariantRenderer = ({
         value={value}
         onChange={handleVariantSelect}
         onCreate={(text) => handleCreateVariant(medicineId, text)}
+        placeholder="Select a variant"
       />
     </Field>
   );

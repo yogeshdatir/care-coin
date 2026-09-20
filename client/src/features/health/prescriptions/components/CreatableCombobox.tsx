@@ -19,6 +19,7 @@ interface CreatableComboboxProps<T> {
   onCreate: (inputValue: string) => T | Promise<T>;
   createLabel?: (query: string) => string;
   disabled?: boolean;
+  placeholder?: string;
 }
 
 function CreatableCombobox<T>({
@@ -30,6 +31,7 @@ function CreatableCombobox<T>({
   onCreate,
   createLabel = (query) => `Add "${query}"`,
   disabled,
+  placeholder,
 }: CreatableComboboxProps<T>) {
   const [inputValue, setInputValue] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -76,7 +78,7 @@ function CreatableCombobox<T>({
       onInputValueChange={setInputValue}
       disabled={disabled}
     >
-      <ComboboxInput placeholder="Select a medicine" />
+      <ComboboxInput placeholder={placeholder ?? 'Select an option'} />
       <ComboboxContent>
         <ComboboxEmpty>{emptyText}</ComboboxEmpty>
         <ComboboxList>

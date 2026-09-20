@@ -109,6 +109,7 @@ const PrescribedMedicinesForm = ({
                     value={field.value}
                     onChange={handleMedicineSelect}
                     onCreate={handleCreateMedicine}
+                    placeholder="Select a medicine"
                   />
                 </Field>
               );
