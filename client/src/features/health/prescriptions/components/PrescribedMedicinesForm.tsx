@@ -1,10 +1,15 @@
 import { Button } from '@/shared/components/ui/button';
-import { Field, FieldGroup, FieldLabel } from '@/shared/components/ui/field';
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from '@/shared/components/ui/field';
 import type { Medicine, MedicineVariant } from '@carecoin/shared-types';
 import { useState } from 'react';
 import {
   Controller,
-  type Control,
+  useFormContext,
   type UseFieldArrayReturn,
 } from 'react-hook-form';
 import CreatableCombobox from './CreatableCombobox';
@@ -13,38 +18,6 @@ import VariantRenderer from './VariantRenderer';
 
 type Props = {
   fields: UseFieldArrayReturn['fields'];
-  control: Control<
-    {
-      doctorId: string;
-      date: string;
-      notes: string;
-      imageUrl: string;
-      medicines: {
-        medicineId: string;
-        medicineVariantId: string;
-        frequency: string;
-        reason: string;
-        startDate: string;
-        endDate: string;
-      }[];
-    },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    any,
-    {
-      doctorId: string;
-      date: string;
-      notes: string;
-      imageUrl: string;
-      medicines: {
-        medicineId: string;
-        medicineVariantId: string;
-        frequency: string;
-        reason: string;
-        startDate: string;
-        endDate: string;
-      }[];
-    }
-  >;
   medicines: Medicine[];
   setMedicines: React.Dispatch<React.SetStateAction<Medicine[]>>;
   remove: UseFieldArrayReturn['remove'];
@@ -52,11 +25,11 @@ type Props = {
 
 const PrescribedMedicinesForm = ({
   fields,
-  control,
   medicines,
   setMedicines,
   remove,
 }: Props) => {
+  const { control, setValue } = useFormContext();
   const [variantOptions, setVariantOptions] = useState<MedicineVariant[]>([]);
 
   const handleCreateMedicine = async (medicineName: string) => {
@@ -94,23 +67,29 @@ const PrescribedMedicinesForm = ({
                       return medicine.id === selectedMedicine.id;
                     })?.variants ?? [],
                   );
+                  setValue(`medicines.${index}.medicineVariantId`, '');
                 }
               };
 
               return (
-                <Field orientation="horizontal" className="max-w-[50%]">
-                  <FieldLabel htmlFor="select-form" className="flex-none!">
-                    Name <span className="text-destructive">*</span>
-                  </FieldLabel>
-                  <CreatableCombobox<Medicine>
-                    options={medicines}
-                    getOptionLabel={(option) => option.name}
-                    getOptionValue={(option) => option.id}
-                    value={field.value}
-                    onChange={handleMedicineSelect}
-                    onCreate={handleCreateMedicine}
-                    placeholder="Select a medicine"
-                  />
+                <Field className="gap-0.5 max-w-[50%]">
+                  <div className="flex flex-row items-center gap-2">
+                    <FieldLabel htmlFor="select-form" className="flex-none!">
+                      Name <span className="text-destructive">*</span>
+                    </FieldLabel>
+                    <CreatableCombobox<Medicine>
+                      options={medicines}
+                      getOptionLabel={(option) => option.name}
+                      getOptionValue={(option) => option.id}
+                      value={field.value}
+                      onChange={handleMedicineSelect}
+                      onCreate={handleCreateMedicine}
+                      placeholder="Select a medicine"
+                    />
+                  </div>
+                  <FieldDescription>
+                    Type a name to search, or add a new one.
+                  </FieldDescription>
                 </Field>
               );
             }}

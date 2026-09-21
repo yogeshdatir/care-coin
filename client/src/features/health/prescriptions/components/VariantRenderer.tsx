@@ -1,4 +1,8 @@
-import { Field, FieldLabel } from '@/shared/components/ui/field';
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+} from '@/shared/components/ui/field';
 import type { Medicine, MedicineVariant } from '@carecoin/shared-types';
 import CreatableCombobox from './CreatableCombobox';
 import { useFormContext, useWatch } from 'react-hook-form';
@@ -31,20 +35,32 @@ const VariantRenderer = ({
 
   if (medicineId === '') return null;
 
+  const getVariantLabel = ({ form, strength }: MedicineVariant) => {
+    const label = strength !== '' && strength ? `${form} - ${strength}` : form;
+    return label || '';
+  };
+
   return (
-    <Field orientation="horizontal" className="max-w-[50%]">
-      <FieldLabel htmlFor="select-form" className="flex-none!">
-        Variant <span className="text-destructive">*</span>
-      </FieldLabel>
-      <CreatableCombobox<MedicineVariant>
-        options={variantOptions}
-        getOptionLabel={(option) => `${option.form} - ${option.strength}`}
-        getOptionValue={(option) => option.id}
-        value={value}
-        onChange={handleVariantSelect}
-        onCreate={(text) => handleCreateVariant(medicineId, text)}
-        placeholder="Select a variant"
-      />
+    <Field className="gap-0.5 max-w-[50%]">
+      <div className="flex flex-row items-center gap-2">
+        <FieldLabel htmlFor="select-form" className="flex-none!">
+          Variant <span className="text-destructive">*</span>
+        </FieldLabel>
+        <CreatableCombobox<MedicineVariant>
+          key={medicineId}
+          options={variantOptions}
+          getOptionLabel={getVariantLabel}
+          getOptionValue={(option) => option.id}
+          value={value}
+          onChange={handleVariantSelect}
+          onCreate={(text) => handleCreateVariant(medicineId, text)}
+          placeholder="Select a variant"
+        />
+      </div>
+      <FieldDescription>
+        Type to search, or add a new one as "Form - Strength" (e.g. "Tablet -
+        500mg").
+      </FieldDescription>
     </Field>
   );
 };

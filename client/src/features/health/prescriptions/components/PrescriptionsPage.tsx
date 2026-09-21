@@ -244,7 +244,6 @@ const PrescriptionsPage = () => {
           <FieldLegend>Medicines</FieldLegend>
           <PrescribedMedicinesForm
             fields={fields}
-            control={control}
             medicines={medicines}
             setMedicines={setMedicines}
             remove={remove}

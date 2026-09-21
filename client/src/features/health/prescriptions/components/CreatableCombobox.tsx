@@ -26,6 +26,7 @@ function CreatableCombobox<T>({
   options,
   getOptionLabel,
   getOptionValue,
+  value,
   onChange,
   emptyText = 'No results found.',
   onCreate,
@@ -73,17 +74,25 @@ function CreatableCombobox<T>({
     <Combobox
       items={options}
       itemToStringLabel={getOptionLabel}
+      value={options.find((o) => getOptionValue(o) === value) ?? null}
       onValueChange={(next) => next && onChange(next)}
       inputValue={inputValue}
       onInputValueChange={setInputValue}
       disabled={disabled}
     >
-      <ComboboxInput placeholder={placeholder ?? 'Select an option'} />
+      <ComboboxInput
+        placeholder={placeholder ?? 'Select an option'}
+        style={{ textTransform: 'capitalize' }}
+      />
       <ComboboxContent>
         <ComboboxEmpty>{emptyText}</ComboboxEmpty>
         <ComboboxList>
           {(item) => (
-            <ComboboxItem key={getOptionValue(item)} value={item}>
+            <ComboboxItem
+              key={getOptionValue(item)}
+              value={item}
+              className="capitalize!"
+            >
               {getOptionLabel(item)}
             </ComboboxItem>
           )}
