@@ -1,4 +1,8 @@
-import { createMedicine, fetchMedicines } from '@/shared/api/medicines';
+import {
+  createMedicine,
+  fetchMedicines,
+  updateMedicine,
+} from '@/shared/api/medicines';
 import { Button } from '@/shared/components/ui/button';
 import {
   Field,
@@ -23,14 +27,17 @@ import {
   type Medicine,
   type MedicineFormItem,
   type MedicineVariant,
+  type UpdateMedicineRequestPayload,
 } from '@carecoin/shared-types';
-import { Fragment, useEffect, useState } from 'react';
+import { Pencil } from 'lucide-react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import {
   Controller,
   useFieldArray,
   useForm,
   type SubmitHandler,
 } from 'react-hook-form';
+import { DeleteConfirmationDialog } from '../../doctors/components/DeleteConfirmationDialog';
 
 const INITIAL_VARIANT = {
   form: '',
@@ -49,6 +56,9 @@ const INITIAL_MEDICINE = {
 
 const MedicinesPage = () => {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
+  const [selectedMedicineId, setSelectedMedicineId] = useState<
+    Medicine['id'] | null
+  >(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -76,7 +86,7 @@ const MedicinesPage = () => {
   });
 
   const handleAddNewMedicine: SubmitHandler<
-    CreateMedicineRequestPayload
+    CreateMedicineRequestPayload | UpdateMedicineRequestPayload
   > = async (data) => {
     const cleanedVariants = data.variants?.filter(
       (variant) => variant.form?.trim() !== '',
@@ -86,14 +96,51 @@ const MedicinesPage = () => {
       ...data,
       variants: cleanedVariants,
     };
-    const response: Medicine = await createMedicine(finalData);
-    setMedicines((prev) => [...prev, response]);
-    reset(INITIAL_MEDICINE);
+    let response: Medicine;
+    if (selectedMedicineId) {
+      response = await updateMedicine(selectedMedicineId, finalData);
+      const updatedMedicines = medicines.map((medicine: Medicine) => {
+        if (medicine.id === selectedMedicineId) return response;
+        else return medicine;
+      });
+      setMedicines(updatedMedicines);
+    } else {
+      response = await createMedicine(finalData);
+      setMedicines((prev) => [...prev, response]);
+    }
+    handleFormReset();
   };
 
   const handleAddVariant = () => {
     append(INITIAL_VARIANT);
   };
+
+  const handleFormReset = useCallback(() => {
+    reset(INITIAL_MEDICINE);
+    setSelectedMedicineId(null);
+  }, [reset]);
+
+  useEffect(() => {
+    if (selectedMedicineId) {
+      const selectedMedicine = medicines.find(
+        (medicine: Medicine) => medicine.id === selectedMedicineId,
+      );
+      if (selectedMedicine) {
+        reset(selectedMedicine);
+      } else {
+        handleFormReset();
+      }
+    } else {
+      // Clear the form if switching back to "Add New" mode
+      handleFormReset();
+    }
+  }, [selectedMedicineId, reset, medicines, handleFormReset]);
+
+  const handleEdit = (id: Medicine['id']) => {
+    setSelectedMedicineId(id);
+  };
+
+  const handleDeleteMedicine = () => {};
 
   return (
     <>
@@ -194,7 +241,18 @@ const MedicinesPage = () => {
             Add Another Variant
           </Button>
         </FieldSet>
-        <Button type="submit">Add Medicine</Button>
+        <div className="flex gap-2">
+          <Button className="flex-1" type="submit">
+            {selectedMedicineId ? 'Update' : 'Add'} Medicine
+          </Button>
+          <Button
+            className="flex-1"
+            type="button"
+            onClick={() => handleFormReset()}
+          >
+            Reset
+          </Button>
+        </div>
       </form>
       <h1>Medicines</h1>
       <table className="border">
@@ -217,6 +275,24 @@ const MedicinesPage = () => {
                   <td className="px-2 border"></td>
                   <td className="px-2 border"></td>
                   <td className="px-2 border">{sideEffects}</td>
+                  <td
+                    className="px-2 border"
+                    rowSpan={(variants?.length || 0) + 1}
+                  >
+                    <div className="flex gap-1">
+                      <Button
+                        variant="secondary"
+                        className="cursor-pointer"
+                        onClick={() => handleEdit(id)}
+                      >
+                        <Pencil />
+                      </Button>
+                      <DeleteConfirmationDialog
+                        id={id}
+                        handleAction={handleDeleteMedicine}
+                      />
+                    </div>
+                  </td>
                 </tr>
 
                 {variants && variants?.length > 0 ? (

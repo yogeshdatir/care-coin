@@ -3,6 +3,7 @@ import {
   getAllMedicines,
   createMedicine,
   createVariant,
+  updateMedicine,
 } from './medicines.service';
 import { requireStringParam } from '../../shared/utils';
 
@@ -29,6 +30,24 @@ export async function handleCreateVariant(req: Request, res: Response) {
       // FK violation — medicineId doesn't exist
       return res.status(404).json({ message: 'Medicine not found' });
     }
+    throw err;
+  }
+}
+
+export async function handleUpdateMedicine(req: Request, res: Response) {
+  try {
+    const id = requireStringParam(req.params.id, 'id');
+    const medicine = await updateMedicine(id, req.body);
+    res.json(medicine);
+  } catch (err: any) {
+    if (err.code === '23503') {
+      return res.status(409).json({
+        message:
+          'Cannot remove a variant that is used in an existing prescription.',
+      });
+    }
+    if (err.status === 404)
+      return res.status(404).json({ message: err.message });
     throw err;
   }
 }

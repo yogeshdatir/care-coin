@@ -1,0 +1,30 @@
+module,feature,status,notes
+Doctors,Create,Done,
+Doctors,Read (list),Done,
+Doctors,Update,Done,
+Doctors,Delete,Done,Blocked by FK if doctor has prescriptions - returns 409
+Doctors,Quick-create from Prescription form,Done,
+Medicines,Create (with variants),Done,Transactional
+Medicines,Read (list with nested variants),Done,
+Medicines,Update (with variant diffing),Done,Handles add/update/remove variants in one save
+Medicines,Delete,Not started,
+Medicines,Quick-create from Prescription form,Done,Name-only
+Medicines,Quick-create variant from Prescription form,Done,Via form - strength parsed input
+Medicines,Add variant to existing medicine (standalone),Done,POST /medicines/:id/variants
+Medicines,Variant deletion when in use by a prescription,Known issue,Blocked by FK (23503) surfaced as 409 - see soft-delete todo
+Medicines,Variant soft-delete (is_active/archived_at),Planned,Fixes the FK block on removing in-use variants properly
+Prescriptions,Create (with nested medicines),Done,Transactional; supports quick-creating medicine/variant inline per row
+Prescriptions,Read (list),Done,Wrapped as { data: [...] } - inconsistent with Doctors/Medicines (bare array); intentional not yet revisited
+Prescriptions,Read (detail),Known issue,Resolved via navigate state not a fetch - breaks on refresh/direct link
+Prescriptions,Update,Not started,
+Prescriptions,Delete,Not started,
+Infrastructure,Shared types package (@carecoin/shared-types),Done,Resolved via TS project references no build step
+Infrastructure,MSW mocking,Done,Per-feature handlers removed as real backend endpoints land
+Infrastructure,Postgres schema + seed data,Done,
+Infrastructure,CORS,Done,
+Infrastructure,Input validation (request bodies),Not started,Malformed requests can still hit raw SQL errors
+Infrastructure,Centralized error-handling middleware,Not started,Unhandled errors currently risk crashing the Express process
+Infrastructure,Shared state (replacing per-page local state),Not started,Deferred multiple times (quick-create sync list-to-detail nav)
+Infrastructure,Creatable combobox component,Done,See creatable-combobox-guide.md for the reusable pattern
+Expense,Everything,Not started,Deliberately deferred to the end
+Auth,Multi-user support,Not started,User entity reserved in schema unused

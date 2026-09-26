@@ -3,6 +3,7 @@ import type {
   Medicine,
   MedicineVariant,
   CreateMedicineRequestPayload,
+  UpdateMedicineRequestPayload,
 } from '@carecoin/shared-types';
 import { emptyToNull } from '../../shared/utils';
 
@@ -81,12 +82,74 @@ export async function createMedicine(
 }
 
 export async function createVariant(
-  medicineId: string,
-  payload: { form?: string; strength?: string },
+  medicineId: Medicine['id'],
+  payload: Omit<MedicineVariant, 'id' | 'medicineId'>,
 ): Promise<MedicineVariant> {
   const result = await pool.query(
     `INSERT INTO medicine_variants (medicine_id, form, strength) VALUES ($1, $2, $3) RETURNING *`,
     [medicineId, emptyToNull(payload.form), emptyToNull(payload.strength)],
   );
   return mapVariantRow(result.rows[0]);
+}
+
+export async function updateMedicine(
+  id: Medicine['id'],
+  payload: UpdateMedicineRequestPayload,
+): Promise<Medicine> {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const medicineResult = await client.query(
+      `UPDATE medicines SET name = $1, side_effects = $2 WHERE id = $3 RETURNING *`,
+      [payload.name, emptyToNull(payload.sideEffects), id],
+    );
+    if (medicineResult.rows.length === 0) {
+      throw Object.assign(new Error('Medicine not found'), { status: 404 });
+    }
+
+    const submittedVariants = payload.variants ?? [];
+    const submittedIds = submittedVariants.filter((v) => v.id).map((v) => v.id);
+
+    // Delete variants no longer present
+    await client.query(
+      `DELETE FROM medicine_variants WHERE medicine_id = $1 AND id != ALL($2::uuid[])`,
+      [
+        id,
+        submittedIds.length > 0
+          ? submittedIds
+          : ['00000000-0000-0000-0000-000000000000'],
+      ],
+    );
+
+    const resultVariants: MedicineVariant[] = [];
+    for (const variant of submittedVariants) {
+      if (variant.id) {
+        const updated = await client.query(
+          `UPDATE medicine_variants SET form = $1, strength = $2 WHERE id = $3 RETURNING *`,
+          [
+            emptyToNull(variant.form),
+            emptyToNull(variant.strength),
+            variant.id,
+          ],
+        );
+        resultVariants.push(mapVariantRow(updated.rows[0]));
+      } else {
+        const created = await client.query(
+          `INSERT INTO medicine_variants (medicine_id, form, strength) VALUES ($1, $2, $3) RETURNING *`,
+          [id, emptyToNull(variant.form), emptyToNull(variant.strength)],
+        );
+        resultVariants.push(mapVariantRow(created.rows[0]));
+      }
+    }
+
+    await client.query('COMMIT');
+    return mapMedicineRow(medicineResult.rows[0], resultVariants);
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 }

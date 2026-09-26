@@ -26,6 +26,13 @@ export interface Medicine {
   variants?: MedicineVariant[];
 }
 
+export type UpdateMedicineRequestPayload = Omit<Medicine, 'id' | 'variants'> & {
+  variants?: (Omit<MedicineVariant, 'id' | 'medicineId'> & {
+    id?: MedicineVariant['id'];
+  })[];
+  // id present = existing variant being updated; id absent = new variant
+};
+
 export interface MedicineVariant {
   id: string;
   medicineId: Medicine['id'];
