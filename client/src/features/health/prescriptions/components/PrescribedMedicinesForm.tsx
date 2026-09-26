@@ -6,14 +6,13 @@ import {
   FieldLabel,
 } from '@/shared/components/ui/field';
 import type { Medicine, MedicineVariant } from '@carecoin/shared-types';
-import { useState } from 'react';
 import {
   Controller,
   useFormContext,
   type UseFieldArrayReturn,
 } from 'react-hook-form';
 import CreatableCombobox from './CreatableCombobox';
-import { createMedicine, createVariant } from '@/shared/api/medicines';
+import { createMedicine } from '@/shared/api/medicines';
 import VariantRenderer from './VariantRenderer';
 
 type Props = {
@@ -30,22 +29,11 @@ const PrescribedMedicinesForm = ({
   remove,
 }: Props) => {
   const { control, setValue } = useFormContext();
-  const [variantOptions, setVariantOptions] = useState<MedicineVariant[]>([]);
 
   const handleCreateMedicine = async (medicineName: string) => {
     const newMedicine = await createMedicine({ name: medicineName });
     setMedicines((prev) => [...prev, newMedicine]);
     return newMedicine;
-  };
-
-  const handleCreateVariant = async (
-    medicineId: Medicine['id'],
-    medicineVariant: string,
-  ) => {
-    const [form, strength] = medicineVariant.split(' - ');
-    const newVariant = await createVariant(medicineId, { form, strength });
-    setVariantOptions((prev) => [...prev, newVariant]);
-    return newVariant;
   };
 
   return (
@@ -62,11 +50,6 @@ const PrescribedMedicinesForm = ({
               ) => {
                 if (selectedMedicine && !Array.isArray(selectedMedicine)) {
                   field.onChange(selectedMedicine.id);
-                  setVariantOptions(
-                    medicines.find((medicine: Medicine) => {
-                      return medicine.id === selectedMedicine.id;
-                    })?.variants ?? [],
-                  );
                   setValue(`medicines.${index}.medicineVariantId`, '');
                 }
               };
@@ -110,8 +93,8 @@ const PrescribedMedicinesForm = ({
 
               return (
                 <VariantRenderer
-                  variantOptions={variantOptions}
-                  handleCreateVariant={handleCreateVariant}
+                  medicines={medicines}
+                  setMedicines={setMedicines}
                   handleVariantSelect={handleVariantSelect}
                   value={field.value}
                   index={index}

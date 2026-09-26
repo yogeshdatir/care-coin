@@ -7,7 +7,7 @@ import {
   ComboboxList,
 } from '@/shared/components/ui/combobox';
 import { Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface CreatableComboboxProps<T> {
   options: T[];
@@ -36,6 +36,13 @@ function CreatableCombobox<T>({
 }: CreatableComboboxProps<T>) {
   const [inputValue, setInputValue] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+
+  const selected = options.find((o) => getOptionValue(o) === value) ?? null;
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setInputValue(selected ? getOptionLabel(selected) : '');
+  }, [getOptionLabel, selected]);
 
   const trimmed = inputValue.trim();
   const hasExactMatch = options.some(

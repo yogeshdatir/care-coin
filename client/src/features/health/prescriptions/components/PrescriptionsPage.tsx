@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/shared/components/ui/select';
 import { Textarea } from '@/shared/components/ui/textarea';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Controller,
   FormProvider,
@@ -27,6 +27,7 @@ import {
 import {
   createPrescription,
   fetchPrescriptions,
+  updatePrescription,
 } from '@/shared/api/prescription';
 import { fetchDoctors } from '@/shared/api/doctor';
 import { fetchMedicines } from '@/shared/api/medicines';
@@ -40,6 +41,8 @@ import type {
   Prescription,
   PrescriptionMedicineFormRow,
 } from '@carecoin/shared-types';
+import { Pencil } from 'lucide-react';
+import { DeleteConfirmationDialog } from '../../doctors/components/DeleteConfirmationDialog';
 
 type LocationState = {
   prescription: Prescription;
@@ -68,8 +71,22 @@ const PrescriptionsPage = () => {
   const navigate = useNavigate();
 
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [editingPrescId, setEditingPrescId] = useState<
+    Prescription['id'] | null
+  >(null);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
+
+  const form = useForm({
+    defaultValues: INITIAL_PRESCRIPTION,
+  });
+
+  const { register, handleSubmit, reset, control } = form;
+
+  const handleFormReset = useCallback(() => {
+    reset(INITIAL_PRESCRIPTION);
+    setEditingPrescId(null);
+  }, [reset]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -102,12 +119,6 @@ const PrescriptionsPage = () => {
     };
   }, []);
 
-  const form = useForm({
-    defaultValues: INITIAL_PRESCRIPTION,
-  });
-
-  const { register, handleSubmit, reset, control } = form;
-
   const handleAddNewPrescription: SubmitHandler<
     CreatePrescriptionRequestPayload
   > = async (data) => {
@@ -119,9 +130,21 @@ const PrescriptionsPage = () => {
       ...data,
       medicines: cleanedMedicines,
     };
-    const response: Prescription = await createPrescription(finalData);
-    setPrescriptions((prev) => [...prev, response]);
-    reset(INITIAL_PRESCRIPTION);
+
+    let response: Prescription;
+    if (editingPrescId) {
+      response = await updatePrescription(editingPrescId, finalData);
+      const updatedPrescriptions = prescriptions.map((presc: Prescription) => {
+        if (presc.id === editingPrescId) return response;
+        else return presc;
+      });
+      setPrescriptions(updatedPrescriptions);
+    } else {
+      response = await createPrescription(finalData);
+      setPrescriptions((prev) => [...prev, response]);
+    }
+
+    handleFormReset();
   };
 
   const { fields, append, remove } = useFieldArray({
@@ -163,6 +186,16 @@ const PrescriptionsPage = () => {
       } as LocationState,
     });
   };
+
+  const handleEdit = (id: Prescription['id']) => {
+    const editingPresc = prescriptions.find((p) => p.id === id);
+    if (editingPresc) {
+      reset(editingPresc);
+      setEditingPrescId(id);
+    }
+  };
+
+  const handleDeletePrescription = () => {};
 
   return (
     <FormProvider {...form}>
@@ -252,7 +285,9 @@ const PrescriptionsPage = () => {
             Add Another Prescribed Medicine
           </Button>
         </FieldSet>
-        <Button type="submit">Add Prescription</Button>
+        <Button type="submit">
+          {editingPrescId ? 'Update' : 'Add'} Prescription
+        </Button>
       </form>
       <h1>Prescriptions</h1>
       <table className="border">
@@ -262,6 +297,7 @@ const PrescriptionsPage = () => {
             <th className="px-2 border">Doctor</th>
             <th className="px-2 border">Date</th>
             <th className="px-2 border">Notes</th>
+            <th className="px-2 border">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -275,7 +311,7 @@ const PrescriptionsPage = () => {
             return (
               <tr
                 key={id}
-                className="cursor-pointer"
+                className="hover:bg-amber-100 cursor-pointer"
                 onClick={() =>
                   handlePrescriptionNav({
                     prescription,
@@ -289,6 +325,24 @@ const PrescriptionsPage = () => {
                 </td>
                 <td className="px-2 border">{date}</td>
                 <td className="px-2 border">{notes}</td>
+                <td
+                  className="px-2 border cursor-auto"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex gap-1">
+                    <Button
+                      variant="secondary"
+                      className="cursor-pointer"
+                      onClick={() => handleEdit(id)}
+                    >
+                      <Pencil />
+                    </Button>
+                    <DeleteConfirmationDialog
+                      id={id}
+                      handleAction={handleDeletePrescription}
+                    />
+                  </div>
+                </td>
               </tr>
             );
           })}

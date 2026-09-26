@@ -6,24 +6,22 @@ import {
 import type { Medicine, MedicineVariant } from '@carecoin/shared-types';
 import CreatableCombobox from './CreatableCombobox';
 import { useFormContext, useWatch } from 'react-hook-form';
+import { createVariant } from '@/shared/api/medicines';
 
 type Props = {
-  variantOptions: MedicineVariant[];
+  medicines: Medicine[];
+  setMedicines: React.Dispatch<React.SetStateAction<Medicine[]>>;
   handleVariantSelect: (
     selectedVariant: MedicineVariant | MedicineVariant[] | null,
   ) => void;
-  handleCreateVariant: (
-    medicineId: string,
-    medicineVariant: string,
-  ) => Promise<MedicineVariant>;
   value: string;
   index: number;
 };
 
 const VariantRenderer = ({
-  variantOptions,
+  medicines,
+  setMedicines,
   handleVariantSelect,
-  handleCreateVariant,
   value,
   index,
 }: Props) => {
@@ -38,6 +36,32 @@ const VariantRenderer = ({
   const getVariantLabel = ({ form, strength }: MedicineVariant) => {
     const label = strength !== '' && strength ? `${form} - ${strength}` : form;
     return label || '';
+  };
+
+  const variantOptions =
+    medicines.find((medicine: Medicine) => {
+      return medicine.id === medicineId;
+    })?.variants ?? [];
+
+  const handleCreateVariant = async (
+    medicineId: Medicine['id'],
+    medicineVariant: string,
+  ) => {
+    const [form, strength] = medicineVariant.split(' - ');
+    const newVariant = await createVariant(medicineId, { form, strength });
+    setMedicines((prev) => {
+      return prev.map((medicine: Medicine) => {
+        if (medicine.id === medicineId) {
+          return {
+            ...medicine,
+            variants: [...(medicine.variants ?? []), newVariant],
+          };
+        } else {
+          return medicine;
+        }
+      });
+    });
+    return newVariant;
   };
 
   return (

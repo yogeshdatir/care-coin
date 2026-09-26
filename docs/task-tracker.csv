@@ -16,7 +16,7 @@ Medicines,Variant soft-delete (is_active/archived_at),Planned,Fixes the FK block
 Prescriptions,Create (with nested medicines),Done,Transactional; supports quick-creating medicine/variant inline per row
 Prescriptions,Read (list),Done,Wrapped as { data: [...] } - inconsistent with Doctors/Medicines (bare array); intentional not yet revisited
 Prescriptions,Read (detail),Known issue,Resolved via navigate state not a fetch - breaks on refresh/direct link
-Prescriptions,Update,Not started,
+Prescriptions,Update,Done,Delete-and-reinsert for prescription_medicines rows (no downstream FK references them, unlike variants)
 Prescriptions,Delete,Not started,
 Infrastructure,Shared types package (@carecoin/shared-types),Done,Resolved via TS project references no build step
 Infrastructure,MSW mocking,Done,Per-feature handlers removed as real backend endpoints land

@@ -8,6 +8,7 @@ Reusable UI/architecture patterns discovered while building real features — ke
 2. [Derive a union type from an array (single source of truth)](#pattern-derive-a-union-type-from-an-array-single-source-of-truth)
 3. [`interface` vs `type` — when to use which](#pattern-interface-vs-type--when-to-use-which)
 4. [shadcn Field hierarchy](#pattern-shadcn-field-hierarchy)
+5. [Don't reset form state via a useEffect watching an id](#pattern-dont-reset-form-state-via-a-useeffect-watching-an-id)
 
 ---
 
@@ -99,10 +100,6 @@ MEDICINE_FORMS.map(f => <SelectItem value={f}>{f}</SelectItem>)
 
 ---
 
-<!-- Next pattern goes here — same shape: Problem / First seen in / Solution / Decision table / Where else this applies -->
-
----
-
 ## Pattern: shadcn Field hierarchy
 
 **Nesting**: `FieldSet > FieldGroup > Field` — but `FieldSet` is opt-in, not required at the top.
@@ -114,3 +111,58 @@ MEDICINE_FORMS.map(f => <SelectItem value={f}>{f}</SelectItem>)
 | `FieldSet` + `FieldLegend` | Only when a set of fields is a genuine logical unit (e.g. "Address": street + city + postal code) — semantic `<fieldset>`/`<legend>`, matters for screen readers |
 
 **Default**: `FieldGroup > Field` for most forms. Add `FieldSet` per distinct section only when the grouping is real, not for every form as a top-level wrapper.
+
+---
+
+## Pattern: don't reset form state via a `useEffect` watching an id
+
+**Problem**: An "edit" flow sets `editingId` state on click, then a `useEffect` watches `editingId` and calls `form.reset(record)` when it changes. This is React's own documented anti-pattern — "adjusting state in response to a prop/state change" — done via an effect when it could be done directly in the event handler that caused the change.
+
+```tsx
+// Anti-pattern
+const handleEdit = (id) => setEditingId(id);
+
+useEffect(() => {
+  if (editingId) {
+    const record = items.find((i) => i.id === editingId);
+    if (record) reset(record);
+  }
+}, [editingId, items, reset]);
+```
+
+**Why it's a real problem, not just style**:
+
+- Extra render cycle — click sets state, effect fires afterward, _then_ resets the form (two renders instead of one).
+- `items` (or similar) in the dependency array means the effect **re-fires whenever the list updates for any reason** — including right after a save — potentially re-resetting the form and wiping in-progress edits, even when `editingId` itself didn't change.
+- This is the specific case React's docs call "You Might Not Need an Effect."
+
+**Fix**: do the lookup and reset directly in the click handler — you already have everything needed at that exact moment, no need to defer it.
+
+```tsx
+const handleEdit = (id) => {
+  const record = items.find((i) => i.id === id);
+  if (record) {
+    reset(record);
+    setEditingId(id);
+  }
+};
+```
+
+Delete the `useEffect` entirely. One render, no stale-dependency risk, no indirection.
+
+**Note on tooling**: the relevant ESLint/React Compiler rule for this (`setState` inside an effect) has **incomplete coverage** — it flagged this exact bug in one file but not in a near-identical file with a slightly different effect shape (three branches vs. one, a wrapped `handleFormReset` vs. inline `reset`). Don't treat "no lint warning" as evidence the pattern is absent — check the actual shape (effect reacting to state, calling setState inside) regardless of whether a tool flags it.
+
+**Where else this applies**: any "select something to edit" flow — Doctors, Medicines, Prescriptions all had this same shape in this project. Check any future edit flow for the same effect-watching-an-id pattern before assuming a new one is safe.
+
+**Companion note — when a `useEffect` for this _is_ legitimate**: the fix above works because the code causing the change (a click handler) is something you own and can put the `setState` into directly. That's not always true. A reusable component (e.g. a combobox) that receives a `value` prop has no handler for the moment that prop changes from outside — it might change because a parent form called `reset()`, and the component has no visibility into that event at all. In that case, syncing internal display state to the external `value` via `useEffect` is the documented, correct use of an effect — there's no "handler" to move the logic into, because the component didn't cause the change.
+
+```tsx
+// Legitimate — no handler exists for "value changed externally"
+const selected = options.find((o) => getOptionValue(o) === value) ?? null;
+
+useEffect(() => {
+  setInputValue(selected ? getOptionLabel(selected) : '');
+}, [selected, getOptionLabel]);
+```
+
+**The distinguishing question**: _do I control the event that caused this change?_ If yes (a click handler in your own component) → move the state update into that handler, don't use an effect. If no (a prop changed for reasons outside this component's knowledge) → an effect syncing to that prop is appropriate.

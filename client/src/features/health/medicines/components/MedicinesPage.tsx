@@ -56,7 +56,7 @@ const INITIAL_MEDICINE = {
 
 const MedicinesPage = () => {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
-  const [selectedMedicineId, setSelectedMedicineId] = useState<
+  const [editingMedicineId, setEditingMedicineId] = useState<
     Medicine['id'] | null
   >(null);
 
@@ -97,10 +97,10 @@ const MedicinesPage = () => {
       variants: cleanedVariants,
     };
     let response: Medicine;
-    if (selectedMedicineId) {
-      response = await updateMedicine(selectedMedicineId, finalData);
+    if (editingMedicineId) {
+      response = await updateMedicine(editingMedicineId, finalData);
       const updatedMedicines = medicines.map((medicine: Medicine) => {
-        if (medicine.id === selectedMedicineId) return response;
+        if (medicine.id === editingMedicineId) return response;
         else return medicine;
       });
       setMedicines(updatedMedicines);
@@ -117,27 +117,15 @@ const MedicinesPage = () => {
 
   const handleFormReset = useCallback(() => {
     reset(INITIAL_MEDICINE);
-    setSelectedMedicineId(null);
+    setEditingMedicineId(null);
   }, [reset]);
 
-  useEffect(() => {
-    if (selectedMedicineId) {
-      const selectedMedicine = medicines.find(
-        (medicine: Medicine) => medicine.id === selectedMedicineId,
-      );
-      if (selectedMedicine) {
-        reset(selectedMedicine);
-      } else {
-        handleFormReset();
-      }
-    } else {
-      // Clear the form if switching back to "Add New" mode
-      handleFormReset();
-    }
-  }, [selectedMedicineId, reset, medicines, handleFormReset]);
-
   const handleEdit = (id: Medicine['id']) => {
-    setSelectedMedicineId(id);
+    const editingMedicine = medicines.find((m) => m.id === id);
+    if (editingMedicine) {
+      reset(editingMedicine);
+      setEditingMedicineId(id);
+    }
   };
 
   const handleDeleteMedicine = () => {};
@@ -243,7 +231,7 @@ const MedicinesPage = () => {
         </FieldSet>
         <div className="flex gap-2">
           <Button className="flex-1" type="submit">
-            {selectedMedicineId ? 'Update' : 'Add'} Medicine
+            {editingMedicineId ? 'Update' : 'Add'} Medicine
           </Button>
           <Button
             className="flex-1"

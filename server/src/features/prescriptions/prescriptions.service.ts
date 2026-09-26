@@ -3,6 +3,7 @@ import type {
   Prescription,
   PrescriptionMedicineFormRow,
   CreatePrescriptionRequestPayload,
+  UpdatePrescriptionRequestPayload,
 } from '@carecoin/shared-types';
 import { emptyToNull } from '../../shared/utils';
 
@@ -97,6 +98,64 @@ export async function createPrescription(
 
     await client.query('COMMIT');
     return mapPrescriptionRow(prescriptionRow, medicines);
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updatePrescription(
+  id: string,
+  payload: UpdatePrescriptionRequestPayload,
+): Promise<Prescription> {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const prescriptionResult = await client.query(
+      `UPDATE prescriptions SET doctor_id = $1, date = $2, notes = $3, image_url = $4 WHERE id = $5 RETURNING *`,
+      [
+        payload.doctorId,
+        payload.date,
+        emptyToNull(payload.notes),
+        emptyToNull(payload.imageUrl),
+        id,
+      ],
+    );
+
+    if (prescriptionResult.rows.length === 0) {
+      throw Object.assign(new Error('Prescription not found'), { status: 404 });
+    }
+
+    await client.query(
+      `DELETE FROM prescription_medicines WHERE prescription_id = $1`,
+      [id],
+    );
+
+    const medicines: PrescriptionMedicineFormRow[] = [];
+    for (const med of payload.medicines ?? []) {
+      const result = await client.query(
+        `INSERT INTO prescription_medicines (prescription_id, medicine_variant_id, frequency, reason, start_date, end_date)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+        [
+          id,
+          med.medicineVariantId,
+          emptyToNull(med.frequency),
+          emptyToNull(med.reason),
+          emptyToNull(med.startDate),
+          emptyToNull(med.endDate),
+        ],
+      );
+      medicines.push(
+        mapMedicineRow({ ...result.rows[0], medicine_id: med.medicineId }),
+      );
+    }
+
+    await client.query('COMMIT');
+    return mapPrescriptionRow(prescriptionResult.rows[0], medicines);
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;

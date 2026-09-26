@@ -75,3 +75,5 @@ export interface Prescription {
 }
 
 export type CreatePrescriptionRequestPayload = Omit<Prescription, 'id'>;
+
+export type UpdatePrescriptionRequestPayload = Omit<Prescription, 'id'>;
