@@ -163,3 +163,12 @@ export async function updatePrescription(
     client.release();
   }
 }
+
+export async function deletePrescription(id: string): Promise<void> {
+  const result = await pool.query('DELETE FROM prescriptions WHERE id = $1', [
+    id,
+  ]);
+  if (result.rowCount === 0) {
+    throw Object.assign(new Error('Prescription not found'), { status: 404 });
+  }
+}

@@ -3,6 +3,7 @@ import {
   getAllPrescriptions,
   createPrescription,
   updatePrescription,
+  deletePrescription,
 } from './prescriptions.service';
 import { requireStringParam } from '../../shared/utils';
 
@@ -22,6 +23,20 @@ export async function handleUpdatePrescription(req: Request, res: Response) {
     const prescription = await updatePrescription(id, req.body);
     res.json(prescription);
   } catch (err: any) {
+    if (err.status === 404)
+      return res.status(404).json({ message: err.message });
+    throw err;
+  }
+}
+
+export async function handleDeletePrescription(req: Request, res: Response) {
+  try {
+    const id = requireStringParam(req.params.id, 'id');
+    await deletePrescription(id);
+    res.status(204).send();
+  } catch (err: any) {
+    if (err.status === 400)
+      return res.status(400).json({ message: err.message });
     if (err.status === 404)
       return res.status(404).json({ message: err.message });
     throw err;

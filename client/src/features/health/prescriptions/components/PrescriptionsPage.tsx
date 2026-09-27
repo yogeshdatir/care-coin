@@ -26,6 +26,7 @@ import {
 } from 'react-hook-form';
 import {
   createPrescription,
+  deletePrescription,
   fetchPrescriptions,
   updatePrescription,
 } from '@/shared/api/prescription';
@@ -195,7 +196,10 @@ const PrescriptionsPage = () => {
     }
   };
 
-  const handleDeletePrescription = () => {};
+  const handleDeletePrescription = async (id: Prescription['id']) => {
+    await deletePrescription(id);
+    setPrescriptions((prev) => prev.filter((p) => p.id !== id));
+  };
 
   return (
     <FormProvider {...form}>

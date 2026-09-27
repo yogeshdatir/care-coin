@@ -69,3 +69,22 @@ export const updatePrescription = async (
     console.error(error);
   }
 };
+
+export const deletePrescription = async (prescId: Prescription['id']) => {
+  try {
+    const url = new URL(`${API_BASE_URL}/prescriptions/${prescId}`);
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
