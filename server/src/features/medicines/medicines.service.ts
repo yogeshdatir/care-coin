@@ -13,6 +13,7 @@ function mapVariantRow(row: any): MedicineVariant {
     medicineId: row.medicine_id,
     form: row.form ?? undefined,
     strength: row.strength ?? undefined,
+    isActive: row.is_active,
   };
 }
 
@@ -22,14 +23,17 @@ function mapMedicineRow(row: any, variants: MedicineVariant[]): Medicine {
     name: row.name,
     sideEffects: row.side_effects ?? undefined,
     variants,
+    isActive: row.is_active,
   };
 }
 
 export async function getAllMedicines(): Promise<Medicine[]> {
   const medicinesResult = await pool.query(
-    'SELECT * FROM medicines ORDER BY name',
+    'SELECT * FROM medicines WHERE is_active = true ORDER BY name',
   );
-  const variantsResult = await pool.query('SELECT * FROM medicine_variants');
+  const variantsResult = await pool.query(
+    'SELECT * FROM medicine_variants WHERE is_active = true',
+  );
 
   const variantsByMedicineId = new Map<string, MedicineVariant[]>();
   for (const row of variantsResult.rows) {
@@ -93,7 +97,7 @@ export async function createVariant(
 }
 
 export async function updateMedicine(
-  id: Medicine['id'],
+  id: string,
   payload: UpdateMedicineRequestPayload,
 ): Promise<Medicine> {
   const client = await pool.connect();
@@ -112,16 +116,32 @@ export async function updateMedicine(
     const submittedVariants = payload.variants ?? [];
     const submittedIds = submittedVariants.filter((v) => v.id).map((v) => v.id);
 
-    // Delete variants no longer present
-    await client.query(
-      `DELETE FROM medicine_variants WHERE medicine_id = $1 AND id != ALL($2::uuid[])`,
-      [
-        id,
-        submittedIds.length > 0
-          ? submittedIds
-          : ['00000000-0000-0000-0000-000000000000'],
-      ],
+    // Find variants that were removed from the submitted array
+    const existingVariantsResult = await client.query(
+      `SELECT id FROM medicine_variants WHERE medicine_id = $1 AND is_active = true`,
+      [id],
     );
+    const removedIds = existingVariantsResult.rows
+      .map((r) => r.id)
+      .filter((existingId) => !submittedIds.includes(existingId));
+
+    for (const removedId of removedIds) {
+      try {
+        await client.query(`DELETE FROM medicine_variants WHERE id = $1`, [
+          removedId,
+        ]);
+      } catch (err: any) {
+        if (err.code === '23503') {
+          // In use by a prescription — soft-delete instead
+          await client.query(
+            `UPDATE medicine_variants SET is_active = false, archived_at = now() WHERE id = $1`,
+            [removedId],
+          );
+        } else {
+          throw err;
+        }
+      }
+    }
 
     const resultVariants: MedicineVariant[] = [];
     for (const variant of submittedVariants) {
@@ -155,8 +175,43 @@ export async function updateMedicine(
 }
 
 export async function deleteMedicine(id: string): Promise<void> {
-  const result = await pool.query('DELETE FROM medicines WHERE id = $1', [id]);
-  if (result.rowCount === 0) {
-    throw Object.assign(new Error('Medicine not found'), { status: 404 });
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const result = await client.query(
+      'SELECT id FROM medicines WHERE id = $1',
+      [id],
+    );
+    if (result.rows.length === 0) {
+      throw Object.assign(new Error('Medicine not found'), { status: 404 });
+    }
+
+    try {
+      // Try a real delete first — succeeds cleanly if nothing references any of its variants
+      await client.query('DELETE FROM medicines WHERE id = $1', [id]);
+    } catch (err: any) {
+      if (err.code === '23503') {
+        // Some variant is in use — soft-delete the medicine and all its variants instead
+        await client.query(
+          `UPDATE medicine_variants SET is_active = false, archived_at = now() WHERE medicine_id = $1`,
+          [id],
+        );
+        await client.query(
+          `UPDATE medicines SET is_active = false, archived_at = now() WHERE id = $1`,
+          [id],
+        );
+      } else {
+        throw err;
+      }
+    }
+
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
   }
 }

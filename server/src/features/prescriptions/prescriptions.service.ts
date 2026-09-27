@@ -25,6 +25,7 @@ function mapPrescriptionRow(
   return {
     id: row.id,
     doctorId: row.doctor_id,
+    doctorName: row.doctor_name,
     date: row.date,
     notes: row.notes ?? undefined,
     imageUrl: row.image_url ?? undefined,
@@ -33,9 +34,12 @@ function mapPrescriptionRow(
 }
 
 export async function getAllPrescriptions(): Promise<Prescription[]> {
-  const prescriptionsResult = await pool.query(
-    'SELECT * FROM prescriptions ORDER BY date DESC',
-  );
+  const prescriptionsResult = await pool.query(`
+    SELECT p.*, d.name AS doctor_name, d.is_active AS doctor_is_active
+    FROM prescriptions p
+    JOIN doctors d ON d.id = p.doctor_id
+    ORDER BY p.date DESC
+  `);
 
   const medicinesResult = await pool.query(`
     SELECT pm.*, mv.medicine_id
@@ -56,6 +60,46 @@ export async function getAllPrescriptions(): Promise<Prescription[]> {
   return prescriptionsResult.rows.map((row) =>
     mapPrescriptionRow(row, medicinesByPrescriptionId.get(row.id) ?? []),
   );
+}
+
+export async function getPrescriptionById(id: string): Promise<Prescription> {
+  const prescriptionResult = await pool.query(
+    `
+    SELECT p.*, d.name AS doctor_name
+    FROM prescriptions p
+    JOIN doctors d ON d.id = p.doctor_id
+    WHERE p.id = $1
+  `,
+    [id],
+  );
+
+  if (prescriptionResult.rows.length === 0) {
+    throw Object.assign(new Error('Prescription not found'), { status: 404 });
+  }
+
+  const medicinesResult = await pool.query(
+    `
+    SELECT pm.*, mv.medicine_id, mv.form, mv.strength, m.name AS medicine_name
+    FROM prescription_medicines pm
+    JOIN medicine_variants mv ON mv.id = pm.medicine_variant_id
+    JOIN medicines m ON m.id = mv.medicine_id
+    WHERE pm.prescription_id = $1
+  `,
+    [id],
+  );
+
+  const medicines = medicinesResult.rows.map((row) => ({
+    medicineId: row.medicine_id,
+    medicineName: row.medicine_name,
+    medicineVariantId: row.medicine_variant_id,
+    variantLabel: `${row.form ?? '—'} - ${row.strength ?? '—'}`,
+    frequency: row.frequency ?? undefined,
+    reason: row.reason ?? undefined,
+    startDate: row.start_date ?? undefined,
+    endDate: row.end_date ?? undefined,
+  }));
+
+  return mapPrescriptionRow(prescriptionResult.rows[0], medicines);
 }
 
 export async function createPrescription(

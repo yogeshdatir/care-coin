@@ -4,6 +4,7 @@ import {
   createDoctor,
   deleteDoctor,
   updateDoctor,
+  getDoctorById,
 } from './doctors.service';
 import { requireStringParam } from '../../shared/utils';
 
@@ -12,6 +13,19 @@ export async function handleGetDoctors(req: Request, res: Response) {
   res.status(200).json({ data: doctors });
 }
 
+export async function handleGetDoctorById(req: Request, res: Response) {
+  try {
+    const id = requireStringParam(req.params.id, 'id');
+    const doctor = await getDoctorById(id);
+    res.json(doctor);
+  } catch (err: any) {
+    if (err.status === 400)
+      return res.status(400).json({ message: err.message });
+    if (err.status === 404)
+      return res.status(404).json({ message: err.message });
+    throw err;
+  }
+}
 export async function handleCreateDoctor(req: Request, res: Response) {
   const doctor = await createDoctor(req.body);
   res.status(201).json(doctor);

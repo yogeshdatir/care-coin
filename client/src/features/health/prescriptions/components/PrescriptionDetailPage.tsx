@@ -1,19 +1,27 @@
-import type { Medicine } from '@carecoin/shared-types';
-import { Link, useLocation } from 'react-router';
+import { fetchPrescriptionById } from '@/shared/api/prescription';
+import type { Prescription } from '@carecoin/shared-types';
+import { useState, useEffect } from 'react';
+import { Link, useParams } from 'react-router';
 
 const PrescriptionDetailPage = () => {
-  const location = useLocation();
+  const { id } = useParams();
+  const [prescription, setPrescription] = useState<Prescription | null>(null);
 
-  const { prescription, doctor, medicines } = location.state || {};
-  const { date } = prescription || {};
-  const { name, id: doctorId } = doctor || {};
+  const { doctorId, doctorName, date } = prescription || {};
+
+  useEffect(() => {
+    if (!id) return;
+    fetchPrescriptionById(id).then(setPrescription);
+  }, [id]);
+
+  if (!prescription) return <p>Loading...</p>;
 
   return (
     <div>
       <p>
         <span>Doctor: </span>
-        <Link to={`/doctor/${doctorId}`} state={{ doctor }}>
-          <span>{name}</span>
+        <Link to={`/doctor/${doctorId}`}>
+          <span>{doctorName}</span>
         </Link>
       </p>
       <p>
@@ -29,25 +37,23 @@ const PrescriptionDetailPage = () => {
               <th className="px-2 border">Name</th>
               <th className="px-2 border">Form</th>
               <th className="px-2 border">Strength</th>
-              <th className="px-2 border">Side Effects</th>
+              <th className="px-2 border">Reason</th>
+              <th className="px-2 border">Period</th>
             </tr>
           </thead>
           <tbody>
-            {medicines?.map((medicine: Medicine, index: number) => {
-              return (
-                <tr key={medicine.id}>
-                  <td className="px-2 border">{index + 1}</td>
-                  <td className="px-2 border capitalize">{medicine.name}</td>
-                  <td className="px-2 border capitalize">
-                    {medicine?.variants?.[0]?.form}
-                  </td>
-                  <td className="px-2 border">
-                    {medicine?.variants?.[0]?.strength}
-                  </td>
-                  <td className="px-2 border">{medicine.sideEffects}</td>
-                </tr>
-              );
-            })}
+            {prescription.medicines?.map((med, index) => (
+              <tr key={`${med.medicineId}-${med.medicineVariantId}`}>
+                <td className="px-2 border">{index + 1}</td>
+                <td className="px-2 border capitalize">{med.medicineName}</td>
+                <td className="px-2 border capitalize">{med.variantLabel}</td>
+                <td className="px-2 border">{med.frequency}</td>
+                <td className="px-2 border">{med.reason}</td>
+                <td className="px-2 border">
+                  {med.startDate} – {med.endDate}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </section>

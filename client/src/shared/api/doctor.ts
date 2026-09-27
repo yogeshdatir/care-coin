@@ -58,3 +58,12 @@ export const deleteDoctor = async (id: Doctor['id']) => {
     throw new Error(body.message ?? `HTTP error! Status: ${response.status}`);
   }
 };
+
+export async function fetchDoctorById(id: string): Promise<Doctor> {
+  const response = await fetch(`${API_BASE_URL}/doctors/${id}`);
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message ?? `HTTP error! Status: ${response.status}`);
+  }
+  return response.json();
+}
