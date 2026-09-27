@@ -44,20 +44,17 @@ export const fetchDoctors = async ({
 };
 
 export const deleteDoctor = async (id: Doctor['id']) => {
-  try {
-    const url = new URL(`${API_BASE_URL}/doctors/${id}`);
+  const url = new URL(`${API_BASE_URL}/doctors/${id}`);
 
-    const response = await fetch(url, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-  } catch (error) {
-    console.error(error);
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message ?? `HTTP error! Status: ${response.status}`);
   }
 };

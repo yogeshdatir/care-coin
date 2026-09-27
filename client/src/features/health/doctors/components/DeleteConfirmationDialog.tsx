@@ -11,18 +11,42 @@ import {
   AlertDialogTrigger,
 } from '@/shared/components/ui/alert-dialog';
 import { Button } from '@/shared/components/ui/button';
-import type { Doctor } from '@carecoin/shared-types';
 import { Trash2Icon } from 'lucide-react';
+import { useState } from 'react';
+
+interface Props {
+  id: string;
+  onConfirmDelete: (id: string) => Promise<void>;
+  title: string;
+  description: string;
+}
 
 export function DeleteConfirmationDialog({
   id,
-  handleAction,
-}: {
-  id: Doctor['id'];
-  handleAction: (id: Doctor['id']) => void;
-}) {
+  onConfirmDelete,
+  title,
+  description,
+}: Props) {
+  const [open, setOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const onConfirm = async () => {
+    setIsDeleting(true);
+    setError(null);
+    try {
+      await onConfirmDelete(id);
+      setOpen(false);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setError(err.message ?? 'Failed to delete.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <AlertDialog>
+    <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
         <Button variant="destructive" className="cursor-pointer">
           <Trash2Icon />
@@ -33,18 +57,21 @@ export function DeleteConfirmationDialog({
           <AlertDialogMedia className="bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-destructive">
             <Trash2Icon />
           </AlertDialogMedia>
-          <AlertDialogTitle>Delete doctor?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This will permanently delete this doctor.
-          </AlertDialogDescription>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+          {error && <p className="text-destructive text-sm">{error}</p>}
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
-            onClick={() => handleAction(id)}
+            onClick={(e) => {
+              e.preventDefault();
+              onConfirm();
+            }}
+            disabled={isDeleting}
           >
-            Delete
+            {isDeleting ? 'Deleting...' : 'Delete'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -1,5 +1,6 @@
 import {
   createMedicine,
+  deleteMedicine,
   fetchMedicines,
   updateMedicine,
 } from '@/shared/api/medicines';
@@ -128,7 +129,10 @@ const MedicinesPage = () => {
     }
   };
 
-  const handleDeleteMedicine = () => {};
+  const handleDeleteMedicine = async (id: Medicine['id']) => {
+    await deleteMedicine(id);
+    setMedicines((prev) => prev.filter((p) => p.id !== id));
+  };
 
   return (
     <>
@@ -277,7 +281,9 @@ const MedicinesPage = () => {
                       </Button>
                       <DeleteConfirmationDialog
                         id={id}
-                        handleAction={handleDeleteMedicine}
+                        onConfirmDelete={handleDeleteMedicine}
+                        title="Delete medicine?"
+                        description="This will permanently delete this medicine."
                       />
                     </div>
                   </td>

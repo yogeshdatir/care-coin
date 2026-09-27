@@ -153,3 +153,10 @@ export async function updateMedicine(
     client.release();
   }
 }
+
+export async function deleteMedicine(id: string): Promise<void> {
+  const result = await pool.query('DELETE FROM medicines WHERE id = $1', [id]);
+  if (result.rowCount === 0) {
+    throw Object.assign(new Error('Medicine not found'), { status: 404 });
+  }
+}

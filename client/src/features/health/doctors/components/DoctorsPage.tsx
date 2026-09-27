@@ -178,7 +178,9 @@ const DoctorsPage = () => {
                       </Button>
                       <DeleteConfirmationDialog
                         id={id}
-                        handleAction={handleDeleteDoctor}
+                        onConfirmDelete={handleDeleteDoctor}
+                        title="Delete doctor?"
+                        description="This will permanently delete this doctor."
                       />
                     </div>
                   </td>

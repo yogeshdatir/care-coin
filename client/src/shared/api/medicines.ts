@@ -88,3 +88,19 @@ export const updateMedicine = async (
     console.error(error);
   }
 };
+
+export const deleteMedicine = async (id: Medicine['id']) => {
+  const url = new URL(`${API_BASE_URL}/medicines/${id}`);
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message ?? `HTTP error! Status: ${response.status}`);
+  }
+};
