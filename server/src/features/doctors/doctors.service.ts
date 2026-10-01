@@ -20,9 +20,7 @@ function mapRowToDoctor(row: any): Doctor {
 }
 
 export async function getAllDoctors(): Promise<Doctor[]> {
-  const result = await pool.query(
-    'SELECT * FROM doctors WHERE is_active = true ORDER BY name',
-  );
+  const result = await pool.query('SELECT * FROM doctors ORDER BY name');
   return result.rows.map(mapRowToDoctor);
 }
 

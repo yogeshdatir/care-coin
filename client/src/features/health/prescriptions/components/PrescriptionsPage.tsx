@@ -1,3 +1,4 @@
+import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
 import {
   Field,
@@ -198,13 +199,24 @@ const PrescriptionsPage = () => {
                     </SelectTrigger>
                     <SelectContent position="popper">
                       <SelectGroup>
-                        {doctors.map(({ id: value, name: label }: Doctor) => {
-                          return (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          );
-                        })}
+                        {doctors.map(
+                          ({ id: value, name: label, isActive }: Doctor) => {
+                            return (
+                              <SelectItem
+                                key={value}
+                                value={value}
+                                disabled={!isActive}
+                              >
+                                <span className="flex items-center gap-2">
+                                  {label}
+                                  {!isActive && (
+                                    <Badge variant="outline">Archived</Badge>
+                                  )}
+                                </span>
+                              </SelectItem>
+                            );
+                          },
+                        )}
                       </SelectGroup>
                     </SelectContent>
                   </Select>

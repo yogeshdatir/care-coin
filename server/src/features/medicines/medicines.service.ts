@@ -14,6 +14,7 @@ function mapVariantRow(row: any): MedicineVariant {
     form: row.form ?? undefined,
     strength: row.strength ?? undefined,
     isActive: row.is_active,
+    archivedAt: row.archived_at ?? undefined,
   };
 }
 
@@ -24,16 +25,15 @@ function mapMedicineRow(row: any, variants: MedicineVariant[]): Medicine {
     sideEffects: row.side_effects ?? undefined,
     variants,
     isActive: row.is_active,
+    archivedAt: row.archived_at ?? undefined,
   };
 }
 
 export async function getAllMedicines(): Promise<Medicine[]> {
   const medicinesResult = await pool.query(
-    'SELECT * FROM medicines WHERE is_active = true ORDER BY name',
+    'SELECT * FROM medicines ORDER BY name',
   );
-  const variantsResult = await pool.query(
-    'SELECT * FROM medicine_variants WHERE is_active = true',
-  );
+  const variantsResult = await pool.query('SELECT * FROM medicine_variants');
 
   const variantsByMedicineId = new Map<string, MedicineVariant[]>();
   for (const row of variantsResult.rows) {
@@ -126,13 +126,15 @@ export async function updateMedicine(
       .filter((existingId) => !submittedIds.includes(existingId));
 
     for (const removedId of removedIds) {
+      await client.query('SAVEPOINT before_variant_delete');
       try {
         await client.query(`DELETE FROM medicine_variants WHERE id = $1`, [
           removedId,
         ]);
       } catch (err: any) {
         if (err.code === '23503') {
-          // In use by a prescription — soft-delete instead
+          // In use by a prescription — roll back the failed delete, then soft-delete instead
+          await client.query('ROLLBACK TO SAVEPOINT before_variant_delete');
           await client.query(
             `UPDATE medicine_variants SET is_active = false, archived_at = now() WHERE id = $1`,
             [removedId],
@@ -180,20 +182,12 @@ export async function deleteMedicine(id: string): Promise<void> {
   try {
     await client.query('BEGIN');
 
-    const result = await client.query(
-      'SELECT id FROM medicines WHERE id = $1',
-      [id],
-    );
-    if (result.rows.length === 0) {
-      throw Object.assign(new Error('Medicine not found'), { status: 404 });
-    }
-
+    await client.query('SAVEPOINT before_delete');
     try {
-      // Try a real delete first — succeeds cleanly if nothing references any of its variants
       await client.query('DELETE FROM medicines WHERE id = $1', [id]);
     } catch (err: any) {
       if (err.code === '23503') {
-        // Some variant is in use — soft-delete the medicine and all its variants instead
+        await client.query('ROLLBACK TO SAVEPOINT before_delete');
         await client.query(
           `UPDATE medicine_variants SET is_active = false, archived_at = now() WHERE medicine_id = $1`,
           [id],

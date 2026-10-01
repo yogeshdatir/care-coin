@@ -79,6 +79,7 @@ const VariantRenderer = ({
           onChange={handleVariantSelect}
           onCreate={(text) => handleCreateVariant(medicineId, text)}
           placeholder="Select a variant"
+          isOptionDisabled={(option) => !option.isActive}
         />
       </div>
       <FieldDescription>

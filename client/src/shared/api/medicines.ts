@@ -26,7 +26,7 @@ export const createMedicine = async (payload: CreateMedicineRequestPayload) => {
   }
 };
 
-export const fetchMedicines = async ({ signal }: { signal: AbortSignal }) => {
+export const fetchMedicines = async ({ signal }: { signal?: AbortSignal }) => {
   try {
     const response = await fetch(`${API_BASE_URL}/medicines`, { signal });
     if (!response.ok) {

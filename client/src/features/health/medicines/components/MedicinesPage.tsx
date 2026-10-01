@@ -39,10 +39,12 @@ import {
   type SubmitHandler,
 } from 'react-hook-form';
 import { DeleteConfirmationDialog } from '../../doctors/components/DeleteConfirmationDialog';
+import { Badge } from '@/shared/components/ui/badge';
 
 const INITIAL_VARIANT = {
   form: '',
   strength: '',
+  isActive: true,
 };
 
 const INITIAL_MEDICINE = {
@@ -53,6 +55,7 @@ const INITIAL_MEDICINE = {
       ...INITIAL_VARIANT,
     },
   ],
+  isActive: true,
 };
 
 const MedicinesPage = () => {
@@ -131,7 +134,8 @@ const MedicinesPage = () => {
 
   const handleDeleteMedicine = async (id: Medicine['id']) => {
     await deleteMedicine(id);
-    setMedicines((prev) => prev.filter((p) => p.id !== id));
+    const fetchedMedicines: { data: Medicine[] } = await fetchMedicines({});
+    setMedicines(fetchedMedicines.data ?? []);
   };
 
   return (
@@ -222,9 +226,13 @@ const MedicinesPage = () => {
                       {...register(`variants.${index}.strength`)}
                     />
                   </Field>
-                  <Button type="button" onClick={() => remove(index)}>
-                    Remove
-                  </Button>
+                  {item.isActive ? (
+                    <Button type="button" onClick={() => remove(index)}>
+                      Remove
+                    </Button>
+                  ) : (
+                    <Button type="button">Unarchive</Button>
+                  )}
                 </FieldGroup>
               );
             })}
@@ -258,51 +266,65 @@ const MedicinesPage = () => {
           </tr>
         </thead>
         <tbody>
-          {medicines.map(({ id, name, sideEffects, variants }, index) => {
-            return (
-              <Fragment key={id}>
-                <tr>
-                  <td className="px-2 border">{index + 1}</td>
-                  <td className="px-2 border capitalize">{name}</td>
-                  <td className="px-2 border"></td>
-                  <td className="px-2 border"></td>
-                  <td className="px-2 border">{sideEffects}</td>
-                  <td
-                    className="px-2 border"
-                    rowSpan={(variants?.length || 0) + 1}
-                  >
-                    <div className="flex gap-1">
-                      <Button
-                        variant="secondary"
-                        className="cursor-pointer"
-                        onClick={() => handleEdit(id)}
-                      >
-                        <Pencil />
-                      </Button>
-                      <DeleteConfirmationDialog
-                        id={id}
-                        onConfirmDelete={handleDeleteMedicine}
-                        title="Delete medicine?"
-                        description="This will permanently delete this medicine."
-                      />
-                    </div>
-                  </td>
-                </tr>
+          {medicines.map(
+            ({ id, name, sideEffects, variants, isActive }, index) => {
+              return (
+                <Fragment key={id}>
+                  <tr>
+                    <td className="px-2 border">{index + 1}</td>
+                    <td className="flex items-center gap-2 px-2 border capitalize">
+                      {name}
+                      {!isActive && <Badge variant="outline">Archived</Badge>}
+                    </td>
+                    <td className="px-2 border"></td>
+                    <td className="px-2 border"></td>
+                    <td className="px-2 border">{sideEffects}</td>
+                    <td
+                      className="px-2 border"
+                      rowSpan={(variants?.length || 0) + 1}
+                    >
+                      <div className="flex gap-1">
+                        <Button
+                          variant="secondary"
+                          className="cursor-pointer"
+                          onClick={() => handleEdit(id)}
+                        >
+                          <Pencil />
+                        </Button>
+                        {isActive && (
+                          <DeleteConfirmationDialog
+                            id={id}
+                            onConfirmDelete={handleDeleteMedicine}
+                            title="Delete medicine?"
+                            description="This will permanently delete this medicine."
+                          />
+                        )}
+                      </div>
+                    </td>
+                  </tr>
 
-                {variants && variants?.length > 0 ? (
-                  <>
-                    {variants.map(({ id, form, strength }: MedicineVariant) => (
-                      <tr key={id}>
-                        <td colSpan={2}></td>
-                        <td className="px-2 border capitalize">{form}</td>
-                        <td className="px-2 border">{strength}</td>
-                      </tr>
-                    ))}
-                  </>
-                ) : null}
-              </Fragment>
-            );
-          })}
+                  {variants && variants?.length > 0 ? (
+                    <>
+                      {variants.map(
+                        ({ id, form, strength, isActive }: MedicineVariant) => (
+                          <tr key={id}>
+                            <td colSpan={2}></td>
+                            <td className="flex items-center gap-2 px-2 border capitalize">
+                              {form}
+                              {!isActive && (
+                                <Badge variant="outline">Archived</Badge>
+                              )}
+                            </td>
+                            <td className="px-2 border">{strength}</td>
+                          </tr>
+                        ),
+                      )}
+                    </>
+                  ) : null}
+                </Fragment>
+              );
+            },
+          )}
         </tbody>
       </table>
     </>

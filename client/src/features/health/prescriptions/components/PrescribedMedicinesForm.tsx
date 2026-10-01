@@ -68,6 +68,7 @@ const PrescribedMedicinesForm = ({
                       onChange={handleMedicineSelect}
                       onCreate={handleCreateMedicine}
                       placeholder="Select a medicine"
+                      isOptionDisabled={(option) => !option.isActive}
                     />
                   </div>
                   <FieldDescription>
