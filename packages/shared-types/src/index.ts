@@ -54,7 +54,10 @@ export type UpdateMedicineRequestPayload = Omit<
   variants?: (Omit<
     MedicineVariant,
     'id' | 'medicineId' | 'isActive' | 'archivedAt'
-  > & { id?: MedicineVariant['id'] })[];
+  > & {
+    id?: MedicineVariant['id'];
+    isActive?: MedicineVariant['isActive'];
+  })[];
 };
 
 export interface Doctor {

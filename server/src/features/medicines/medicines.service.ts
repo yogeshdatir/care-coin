@@ -97,7 +97,7 @@ export async function createVariant(
 }
 
 export async function updateMedicine(
-  id: string,
+  id: Medicine['id'],
   payload: UpdateMedicineRequestPayload,
 ): Promise<Medicine> {
   const client = await pool.connect();
@@ -149,10 +149,11 @@ export async function updateMedicine(
     for (const variant of submittedVariants) {
       if (variant.id) {
         const updated = await client.query(
-          `UPDATE medicine_variants SET form = $1, strength = $2 WHERE id = $3 RETURNING *`,
+          `UPDATE medicine_variants SET form = $1, strength = $2, is_active = $3 WHERE id = $4 RETURNING *`,
           [
             emptyToNull(variant.form),
             emptyToNull(variant.strength),
+            variant.isActive,
             variant.id,
           ],
         );
@@ -176,7 +177,7 @@ export async function updateMedicine(
   }
 }
 
-export async function deleteMedicine(id: string): Promise<void> {
+export async function deleteMedicine(id: Medicine['id']): Promise<void> {
   const client = await pool.connect();
 
   try {
@@ -208,4 +209,36 @@ export async function deleteMedicine(id: string): Promise<void> {
   } finally {
     client.release();
   }
+}
+
+export async function unarchiveMedicine(id: Medicine['id']): Promise<Medicine> {
+  const result = await pool.query(
+    `UPDATE medicines SET is_active = true WHERE id = $1 RETURNING *`,
+    [id],
+  );
+
+  if (result.rows.length === 0) {
+    const error = new Error('Medicine not found');
+    (error as any).status = 404;
+    throw error;
+  }
+
+  return mapMedicineRow(result.rows[0], []);
+}
+
+export async function unarchiveVariant(
+  id: MedicineVariant['id'],
+): Promise<MedicineVariant> {
+  const result = await pool.query(
+    `UPDATE medicine_variants SET is_active = true WHERE id = $1 RETURNING *`,
+    [id],
+  );
+
+  if (result.rows.length === 0) {
+    const error = new Error('Medicine variant not found');
+    (error as any).status = 404;
+    throw error;
+  }
+
+  return mapVariantRow(result.rows[0]);
 }

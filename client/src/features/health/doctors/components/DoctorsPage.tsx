@@ -16,7 +16,8 @@ import type {
 import { useEffect, useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
-import { Pencil } from 'lucide-react';
+import { ArchiveRestore, Pencil } from 'lucide-react';
+import { Badge } from '@/shared/components/ui/badge';
 
 const INITIAL_DOCTOR: CreateDoctorRequestPayload = {
   name: '',
@@ -155,13 +156,18 @@ const DoctorsPage = () => {
         <tbody>
           {doctors.map(
             (
-              { id, name, specialty, clinicName, city, phone, notes },
+              { id, name, specialty, clinicName, city, phone, notes, isActive },
               index,
             ) => {
               return (
                 <tr key={id}>
                   <td className="px-2 border">{index + 1}</td>
-                  <td className="px-2 border">{name}</td>
+                  <td className="px-2 border">
+                    <div className="flex items-center gap-2">
+                      {name}
+                      {!isActive && <Badge variant="outline">Archived</Badge>}
+                    </div>
+                  </td>
                   <td className="px-2 border">{specialty}</td>
                   <td className="px-2 border">{clinicName}</td>
                   <td className="px-2 border">{city}</td>
@@ -176,12 +182,23 @@ const DoctorsPage = () => {
                       >
                         <Pencil />
                       </Button>
-                      <DeleteConfirmationDialog
-                        id={id}
-                        onConfirmDelete={handleDeleteDoctor}
-                        title="Delete doctor?"
-                        description="This will permanently delete this doctor."
-                      />
+                      {isActive ? (
+                        <DeleteConfirmationDialog
+                          id={id}
+                          onConfirmDelete={handleDeleteDoctor}
+                          title="Delete doctor?"
+                          description="This will permanently delete this doctor."
+                        />
+                      ) : (
+                        <Button
+                          type="button"
+                          className="cursor-pointer"
+                          variant="secondary"
+                          title="Unarchive"
+                        >
+                          <ArchiveRestore />
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>

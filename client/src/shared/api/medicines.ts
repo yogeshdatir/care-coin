@@ -1,6 +1,7 @@
 import type {
   CreateMedicineRequestPayload,
   Medicine,
+  MedicineVariant,
   UpdateMedicineRequestPayload,
 } from '@carecoin/shared-types';
 import { API_BASE_URL } from './config';
@@ -97,6 +98,35 @@ export const deleteMedicine = async (id: Medicine['id']) => {
     headers: {
       'Content-Type': 'application/json',
     },
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message ?? `HTTP error! Status: ${response.status}`);
+  }
+};
+
+export const unarchiveMedicine = async (id: Medicine['id']) => {
+  const url = new URL(`${API_BASE_URL}/medicines/unarchive/${id}`);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message ?? `HTTP error! Status: ${response.status}`);
+  }
+};
+
+export const unarchiveVariant = async (id: MedicineVariant['id']) => {
+  const url = new URL(`${API_BASE_URL}/medicines/unarchive/variant/${id}`);
+
+  const response = await fetch(url, {
+    method: 'POST',
   });
 
   if (!response.ok) {

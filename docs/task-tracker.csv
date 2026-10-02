@@ -1,11 +1,11 @@
 module,feature,status,notes
 Doctors,Create,Done,
 Doctors,Read (list),Done,
-Doctors,Update,Done,
+Doctors,Update,Planned,
 Doctors,Delete,Done,Blocked by FK if doctor has prescriptions - returns 409
 Doctors,Quick-create from Prescription form,Done,
 Doctors,Doctor soft-delete (is_active/archived_at),Done,Resolve FK issues
-Doctors,Undo soft-delete,Planned,
+Doctors,Undo soft-delete,Planned,Unarchive feature for doctors
 Medicines,Create (with variants),Done,Transactional
 Medicines,Read (list with nested variants),Done,
 Medicines,Update (with variant diffing),Done,Handles add/update/remove variants in one save
@@ -15,7 +15,7 @@ Medicines,Quick-create variant from Prescription form,Done,Via form - strength p
 Medicines,Add variant to existing medicine (standalone),Done,POST /medicines/:id/variants
 Medicines,Variant deletion when in use by a prescription,Done,Blocked by FK (23503) surfaced as 409 - see soft-delete todo
 Medicines,Variant soft-delete (is_active/archived_at),Done,Fixes the FK block on removing in-use variants properly
-Medicines,Undo soft-delete,Planned,
+Medicines,Undo soft-delete,Done,Unarchive feature for medicine and variants
 Prescriptions,Create (with nested medicines),Done,Transactional; supports quick-creating medicine/variant inline per row
 Prescriptions,Read (list),Done,Wrapped as { data: [...] } - inconsistent with Doctors/Medicines (bare array); intentional not yet revisited
 Prescriptions,Read (detail),Known issue,Resolved via navigate state not a fetch - breaks on refresh/direct link
