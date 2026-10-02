@@ -1,11 +1,11 @@
 module,feature,status,notes
 Doctors,Create,Done,
 Doctors,Read (list),Done,
-Doctors,Update,Planned,
+Doctors,Update,Done,
 Doctors,Delete,Done,Blocked by FK if doctor has prescriptions - returns 409
 Doctors,Quick-create from Prescription form,Done,
 Doctors,Doctor soft-delete (is_active/archived_at),Done,Resolve FK issues
-Doctors,Undo soft-delete,Planned,Unarchive feature for doctors
+Doctors,Undo soft-delete,Done,Unarchive feature for doctors
 Medicines,Create (with variants),Done,Transactional
 Medicines,Read (list with nested variants),Done,
 Medicines,Update (with variant diffing),Done,Handles add/update/remove variants in one save
@@ -18,10 +18,10 @@ Medicines,Variant soft-delete (is_active/archived_at),Done,Fixes the FK block on
 Medicines,Undo soft-delete,Done,Unarchive feature for medicine and variants
 Prescriptions,Create (with nested medicines),Done,Transactional; supports quick-creating medicine/variant inline per row
 Prescriptions,Read (list),Done,Wrapped as { data: [...] } - inconsistent with Doctors/Medicines (bare array); intentional not yet revisited
-Prescriptions,Read (detail),Known issue,Resolved via navigate state not a fetch - breaks on refresh/direct link
+Prescriptions,Read (detail),Done,Resolved via navigate state not a fetch - breaks on refresh/direct link
 Prescriptions,Update,Done,Delete-and-reinsert for prescription_medicines rows (no downstream FK references them unlike variants)
 Prescriptions,Delete,Done,
-Prescriptions,Create,Known issue,"When a selected medicine is reselected without any change, its variant field is reset"
+Prescriptions,Create,Done,"When a selected medicine is reselected without any change, its variant field is reset"
 Infrastructure,Shared types package (@carecoin/shared-types),Done,Resolved via TS project references no build step
 Infrastructure,MSW mocking,Done,Per-feature handlers removed as real backend endpoints land
 Infrastructure,Postgres schema + seed data,Done,
