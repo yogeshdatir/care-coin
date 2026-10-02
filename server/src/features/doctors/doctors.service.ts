@@ -1,6 +1,7 @@
 import type {
   Doctor,
   CreateDoctorRequestPayload,
+  DeleteDoctorResponse,
 } from '@carecoin/shared-types';
 import { pool } from '../../db/pool';
 import { emptyToNull } from '../../shared/utils';
@@ -14,6 +15,8 @@ function mapRowToDoctor(row: any): Doctor {
     city: row.city,
     phone: row.phone ?? undefined,
     notes: row.notes ?? undefined,
+    isActive: row.is_active,
+    archivedAt: row.archived_at ?? undefined,
   };
 }
 
@@ -41,12 +44,24 @@ export async function createDoctor(
   return mapRowToDoctor(result.rows[0]);
 }
 
-export async function deleteDoctor(id: string): Promise<void> {
-  const result = await pool.query('DELETE FROM doctors WHERE id = $1', [id]);
-  if (result.rowCount === 0) {
-    const error = new Error('Doctor not found');
-    (error as any).status = 404;
-    throw error;
+export async function deleteDoctor(id: string): Promise<DeleteDoctorResponse> {
+  const result = await pool.query('SELECT id FROM doctors WHERE id = $1', [id]);
+  if (result.rows.length === 0) {
+    throw Object.assign(new Error('Doctor not found'), { status: 404 });
+  }
+
+  try {
+    await pool.query('DELETE FROM doctors WHERE id = $1', [id]);
+    return { archived: false };
+  } catch (err: any) {
+    if (err.code === '23503') {
+      await pool.query(
+        `UPDATE doctors SET is_active = false, archived_at = now() WHERE id = $1`,
+        [id],
+      );
+      return { archived: true };
+    }
+    throw err;
   }
 }
 
@@ -68,6 +83,29 @@ export async function updateDoctor(
       emptyToNull(payload.notes),
       id,
     ],
+  );
+
+  if (result.rows.length === 0) {
+    const error = new Error('Doctor not found');
+    (error as any).status = 404;
+    throw error;
+  }
+
+  return mapRowToDoctor(result.rows[0]);
+}
+
+export async function getDoctorById(id: string): Promise<Doctor> {
+  const result = await pool.query('SELECT * FROM doctors WHERE id = $1', [id]);
+  if (result.rows.length === 0) {
+    throw Object.assign(new Error('Doctor not found'), { status: 404 });
+  }
+  return mapRowToDoctor(result.rows[0]);
+}
+
+export async function unarchiveDoctor(id: Doctor['id']): Promise<Doctor> {
+  const result = await pool.query(
+    `UPDATE doctors SET is_active = true WHERE id = $1 RETURNING *`,
+    [id],
   );
 
   if (result.rows.length === 0) {

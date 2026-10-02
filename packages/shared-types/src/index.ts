@@ -24,24 +24,44 @@ export interface Medicine {
   name: string;
   sideEffects?: string;
   variants?: MedicineVariant[];
+  isActive: boolean;
+  archivedAt?: string;
 }
-
-export type UpdateMedicineRequestPayload = Omit<Medicine, 'id' | 'variants'> & {
-  variants?: (Omit<MedicineVariant, 'id' | 'medicineId'> & {
-    id?: MedicineVariant['id'];
-  })[];
-  // id present = existing variant being updated; id absent = new variant
-};
 
 export interface MedicineVariant {
   id: string;
   medicineId: Medicine['id'];
   form?: MedicineForm;
   strength?: string;
+  isActive: boolean;
+  archivedAt?: string;
 }
 
-export type CreateMedicineRequestPayload = Omit<Medicine, 'id' | 'variants'> & {
-  variants?: Omit<MedicineVariant, 'id' | 'medicineId'>[];
+export type CreateMedicineRequestPayload = Omit<
+  Medicine,
+  'id' | 'variants' | 'isActive' | 'archivedAt'
+> & {
+  variants?: Omit<
+    MedicineVariant,
+    'id' | 'medicineId' | 'isActive' | 'archivedAt'
+  >[];
+};
+
+export type UpdateMedicineRequestPayload = Omit<
+  Medicine,
+  'id' | 'variants' | 'isActive' | 'archivedAt'
+> & {
+  variants?: (Omit<
+    MedicineVariant,
+    'id' | 'medicineId' | 'isActive' | 'archivedAt'
+  > & {
+    id?: MedicineVariant['id'];
+    isActive?: MedicineVariant['isActive'];
+  })[];
+};
+
+export type DeleteMedicineResponse = {
+  archived: boolean; // true: soft-archived (in use), false: hard-deleted
 };
 
 export interface Doctor {
@@ -52,13 +72,29 @@ export interface Doctor {
   city: string;
   phone?: string;
   notes?: string;
+  isActive: boolean;
+  archivedAt?: string;
 }
 
-export type CreateDoctorRequestPayload = Omit<Doctor, 'id'>;
+export type CreateDoctorRequestPayload = Omit<
+  Doctor,
+  'id' | 'isActive' | 'archivedAt'
+>;
+
+export type UpdateDoctorRequestPayload = Omit<
+  Doctor,
+  'id' | 'isActive' | 'archivedAt'
+>;
+
+export type DeleteDoctorResponse = {
+  archived: boolean; // true: soft-archived (in use), false: hard-deleted
+};
 
 export interface PrescriptionMedicineFormRow {
   medicineId: Medicine['id'];
+  medicineName?: string;
   medicineVariantId: MedicineVariant['id'];
+  variantLabel?: string;
   frequency?: string;
   reason?: string;
   startDate?: string;
@@ -68,12 +104,19 @@ export interface PrescriptionMedicineFormRow {
 export interface Prescription {
   id: string;
   doctorId: string;
+  doctorName: string;
   date: string;
   notes?: string;
   imageUrl?: string;
   medicines?: PrescriptionMedicineFormRow[];
 }
 
-export type CreatePrescriptionRequestPayload = Omit<Prescription, 'id'>;
+export type CreatePrescriptionRequestPayload = Omit<
+  Prescription,
+  'id' | 'doctorName'
+>;
 
-export type UpdatePrescriptionRequestPayload = Omit<Prescription, 'id'>;
+export type UpdatePrescriptionRequestPayload = Omit<
+  Prescription,
+  'id' | 'doctorName'
+>;

@@ -2,6 +2,7 @@ import {
   createMedicine,
   deleteMedicine,
   fetchMedicines,
+  unarchiveMedicine,
   updateMedicine,
 } from '@/shared/api/medicines';
 import { Button } from '@/shared/components/ui/button';
@@ -30,7 +31,7 @@ import {
   type MedicineVariant,
   type UpdateMedicineRequestPayload,
 } from '@carecoin/shared-types';
-import { Pencil } from 'lucide-react';
+import { ArchiveRestore, Pencil } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import {
   Controller,
@@ -39,13 +40,28 @@ import {
   type SubmitHandler,
 } from 'react-hook-form';
 import { DeleteConfirmationDialog } from '../../doctors/components/DeleteConfirmationDialog';
+import { Badge } from '@/shared/components/ui/badge';
 
-const INITIAL_VARIANT = {
+type MedicineVariantFormValues = Omit<
+  MedicineVariant,
+  'id' | 'medicineId' | 'isActive'
+> & {
+  id?: MedicineVariant['id'];
+  isActive?: MedicineVariant['isActive'];
+};
+
+type MedicineFormValues = Omit<Medicine, 'id' | 'variants' | 'isActive'> & {
+  id?: Medicine['id'];
+  variants?: MedicineVariantFormValues[];
+  isActive?: Medicine['isActive'];
+};
+
+const INITIAL_VARIANT: MedicineVariantFormValues = {
   form: '',
   strength: '',
 };
 
-const INITIAL_MEDICINE = {
+const INITIAL_MEDICINE: MedicineFormValues = {
   name: '',
   sideEffects: '',
   variants: [
@@ -77,13 +93,19 @@ const MedicinesPage = () => {
     };
   }, []);
 
-  const { register, handleSubmit, control, reset } = useForm({
+  const { register, handleSubmit, control, reset, getValues } = useForm({
     defaultValues: INITIAL_MEDICINE,
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control,
     name: 'variants',
+    // useFieldArray adds its own `id` to every item to use as a React key,
+    // which overwrites our variant's real DB `id` (e.g. unarchiveVariant(item.id)
+    // would receive RHF's generated id instead of the variant id).
+    // Renaming the key to `fieldKey` keeps `item.id` as the real variant id.
+    // Use `item.fieldKey` for the React `key` prop.
+    keyName: 'fieldKey',
   });
 
   const handleAddNewMedicine: SubmitHandler<
@@ -97,6 +119,7 @@ const MedicinesPage = () => {
       ...data,
       variants: cleanedVariants,
     };
+
     let response: Medicine;
     if (editingMedicineId) {
       response = await updateMedicine(editingMedicineId, finalData);
@@ -116,6 +139,12 @@ const MedicinesPage = () => {
     append(INITIAL_VARIANT);
   };
 
+  // Pending until submit: the update endpoint receives `isActive: true`
+  // for this variant and un-archives it.
+  const handleVariantUnarchive = (index: number) => {
+    update(index, { ...getValues(`variants.${index}`), isActive: true });
+  };
+
   const handleFormReset = useCallback(() => {
     reset(INITIAL_MEDICINE);
     setEditingMedicineId(null);
@@ -130,8 +159,34 @@ const MedicinesPage = () => {
   };
 
   const handleDeleteMedicine = async (id: Medicine['id']) => {
-    await deleteMedicine(id);
-    setMedicines((prev) => prev.filter((p) => p.id !== id));
+    const { archived } = await deleteMedicine(id);
+
+    setMedicines((prev) =>
+      archived
+        ? prev.map((med) =>
+            med.id === id
+              ? {
+                  ...med,
+                  isActive: false,
+                  // backend archives all variants too, so mirror that
+                  variants: med.variants?.map((v) => ({
+                    ...v,
+                    isActive: false,
+                  })),
+                }
+              : med,
+          )
+        : prev.filter((med) => med.id !== id),
+    );
+
+    if (id === editingMedicineId) handleFormReset();
+  };
+
+  const handleMedicineUnarchive = async (id: Medicine['id']) => {
+    await unarchiveMedicine(id);
+    setMedicines((prev) =>
+      prev.map((med) => (med.id === id ? { ...med, isActive: true } : med)),
+    );
   };
 
   return (
@@ -168,8 +223,9 @@ const MedicinesPage = () => {
           <FieldLegend>Variants</FieldLegend>
           <FieldGroup>
             {fields.map((item, index) => {
+              const isArchived = item.isActive === false;
               return (
-                <FieldGroup key={item.id} className="flex flex-row gap-2">
+                <FieldGroup key={item.fieldKey} className="flex flex-row gap-2">
                   <Controller
                     name={`variants.${index}.form` as const}
                     control={control}
@@ -222,9 +278,18 @@ const MedicinesPage = () => {
                       {...register(`variants.${index}.strength`)}
                     />
                   </Field>
-                  <Button type="button" onClick={() => remove(index)}>
-                    Remove
-                  </Button>
+                  {isArchived ? (
+                    <Button
+                      type="button"
+                      onClick={() => handleVariantUnarchive(index)}
+                    >
+                      Unarchive
+                    </Button>
+                  ) : (
+                    <Button type="button" onClick={() => remove(index)}>
+                      Remove
+                    </Button>
+                  )}
                 </FieldGroup>
               );
             })}
@@ -258,51 +323,86 @@ const MedicinesPage = () => {
           </tr>
         </thead>
         <tbody>
-          {medicines.map(({ id, name, sideEffects, variants }, index) => {
-            return (
-              <Fragment key={id}>
-                <tr>
-                  <td className="px-2 border">{index + 1}</td>
-                  <td className="px-2 border capitalize">{name}</td>
-                  <td className="px-2 border"></td>
-                  <td className="px-2 border"></td>
-                  <td className="px-2 border">{sideEffects}</td>
-                  <td
-                    className="px-2 border"
-                    rowSpan={(variants?.length || 0) + 1}
-                  >
-                    <div className="flex gap-1">
-                      <Button
-                        variant="secondary"
-                        className="cursor-pointer"
-                        onClick={() => handleEdit(id)}
-                      >
-                        <Pencil />
-                      </Button>
-                      <DeleteConfirmationDialog
-                        id={id}
-                        onConfirmDelete={handleDeleteMedicine}
-                        title="Delete medicine?"
-                        description="This will permanently delete this medicine."
-                      />
-                    </div>
-                  </td>
-                </tr>
+          {medicines.map(
+            ({ id, name, sideEffects, variants, isActive }, index) => {
+              const isArchived = isActive === false;
+              return (
+                <Fragment key={id}>
+                  <tr>
+                    <td className="px-2 border">{index + 1}</td>
+                    <td className="px-2 border capitalize">
+                      <div className="flex items-center gap-2">
+                        {name}
+                        {isArchived && (
+                          <Badge variant="outline">Archived</Badge>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-2 border"></td>
+                    <td className="px-2 border"></td>
+                    <td className="px-2 border">{sideEffects}</td>
+                    <td
+                      className="px-2 border"
+                      rowSpan={(variants?.length || 0) + 1}
+                    >
+                      <div className="flex gap-1">
+                        <Button
+                          variant="secondary"
+                          className="cursor-pointer"
+                          onClick={() => handleEdit(id)}
+                          title="Edit medicine"
+                        >
+                          <Pencil />
+                        </Button>
+                        {isArchived ? (
+                          <Button
+                            type="button"
+                            className="cursor-pointer"
+                            variant="secondary"
+                            title="Unarchive"
+                            onClick={() => handleMedicineUnarchive(id)}
+                          >
+                            <ArchiveRestore />
+                          </Button>
+                        ) : (
+                          <DeleteConfirmationDialog
+                            id={id}
+                            onConfirmDelete={handleDeleteMedicine}
+                            title="Delete medicine?"
+                            description="This will permanently delete this medicine."
+                          />
+                        )}
+                      </div>
+                    </td>
+                  </tr>
 
-                {variants && variants?.length > 0 ? (
-                  <>
-                    {variants.map(({ id, form, strength }: MedicineVariant) => (
-                      <tr key={id}>
-                        <td colSpan={2}></td>
-                        <td className="px-2 border capitalize">{form}</td>
-                        <td className="px-2 border">{strength}</td>
-                      </tr>
-                    ))}
-                  </>
-                ) : null}
-              </Fragment>
-            );
-          })}
+                  {variants && variants?.length > 0 ? (
+                    <>
+                      {variants.map(
+                        ({ id, form, strength, isActive }: MedicineVariant) => {
+                          const isArchived = isActive === false;
+                          return (
+                            <tr key={id}>
+                              <td colSpan={2}></td>
+                              <td className="px-2 border capitalize">
+                                <div className="flex items-center gap-2">
+                                  {form}
+                                  {isArchived && (
+                                    <Badge variant="outline">Archived</Badge>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-2 border">{strength}</td>
+                            </tr>
+                          );
+                        },
+                      )}
+                    </>
+                  ) : null}
+                </Fragment>
+              );
+            },
+          )}
         </tbody>
       </table>
     </>

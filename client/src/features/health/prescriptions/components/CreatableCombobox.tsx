@@ -6,6 +6,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from '@/shared/components/ui/combobox';
+import { Badge } from '@/shared/components/ui/badge';
 import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -20,6 +21,7 @@ interface CreatableComboboxProps<T> {
   createLabel?: (query: string) => string;
   disabled?: boolean;
   placeholder?: string;
+  isOptionDisabled?: (option: T) => boolean;
 }
 
 function CreatableCombobox<T>({
@@ -33,6 +35,7 @@ function CreatableCombobox<T>({
   createLabel = (query) => `Add "${query}"`,
   disabled,
   placeholder,
+  isOptionDisabled,
 }: CreatableComboboxProps<T>) {
   const [inputValue, setInputValue] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -98,9 +101,15 @@ function CreatableCombobox<T>({
             <ComboboxItem
               key={getOptionValue(item)}
               value={item}
-              className="capitalize!"
+              disabled={isOptionDisabled?.(item)}
+              className="disabled:cursor-not-allowed capitalize!"
             >
-              {getOptionLabel(item)}
+              <span className="flex items-center gap-2">
+                {getOptionLabel(item)}
+                {isOptionDisabled?.(item) && (
+                  <Badge variant="outline">Archived</Badge>
+                )}
+              </span>
             </ComboboxItem>
           )}
         </ComboboxList>

@@ -88,3 +88,14 @@ export const deletePrescription = async (prescId: Prescription['id']) => {
     console.error(error);
   }
 };
+
+export async function fetchPrescriptionById(
+  prescId: Prescription['id'],
+): Promise<Prescription> {
+  const response = await fetch(`${API_BASE_URL}/prescriptions/${prescId}`);
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message ?? `HTTP error! Status: ${response.status}`);
+  }
+  return response.json();
+}

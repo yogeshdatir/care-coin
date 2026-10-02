@@ -5,6 +5,8 @@ import {
   createVariant,
   updateMedicine,
   deleteMedicine,
+  unarchiveMedicine,
+  unarchiveVariant,
 } from './medicines.service';
 import { requireStringParam } from '../../shared/utils';
 
@@ -56,17 +58,34 @@ export async function handleUpdateMedicine(req: Request, res: Response) {
 export async function handleDeleteMedicine(req: Request, res: Response) {
   try {
     const id = requireStringParam(req.params.id, 'id');
-    await deleteMedicine(id);
+    const result = await deleteMedicine(id);
+    res.status(200).json(result);
+  } catch (err: any) {
+    if (err.status === 400 || err.status === 404) {
+      return res.status(err.status).json({ message: err.message });
+    }
+    throw err;
+  }
+}
+
+export async function handleUnarchiveMedicine(req: Request, res: Response) {
+  try {
+    const id = requireStringParam(req.params.id, 'id');
+    await unarchiveMedicine(id);
     res.status(204).send();
   } catch (err: any) {
-    if (err.status === 400)
-      return res.status(400).json({ message: err.message });
-    if (err.code === '23503') {
-      return res.status(409).json({
-        message:
-          'Cannot delete this medicine — one or more of its variants is used in an existing prescription.',
-      });
-    }
+    if (err.status === 404)
+      return res.status(404).json({ message: err.message });
+    throw err;
+  }
+}
+
+export async function handleUnarchiveVariant(req: Request, res: Response) {
+  try {
+    const id = requireStringParam(req.params.id, 'id');
+    await unarchiveVariant(id);
+    res.status(204).send();
+  } catch (err: any) {
     if (err.status === 404)
       return res.status(404).json({ message: err.message });
     throw err;

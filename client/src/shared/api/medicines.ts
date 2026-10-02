@@ -1,6 +1,8 @@
 import type {
   CreateMedicineRequestPayload,
+  DeleteMedicineResponse,
   Medicine,
+  MedicineVariant,
   UpdateMedicineRequestPayload,
 } from '@carecoin/shared-types';
 import { API_BASE_URL } from './config';
@@ -26,7 +28,7 @@ export const createMedicine = async (payload: CreateMedicineRequestPayload) => {
   }
 };
 
-export const fetchMedicines = async ({ signal }: { signal: AbortSignal }) => {
+export const fetchMedicines = async ({ signal }: { signal?: AbortSignal }) => {
   try {
     const response = await fetch(`${API_BASE_URL}/medicines`, { signal });
     if (!response.ok) {
@@ -89,14 +91,42 @@ export const updateMedicine = async (
   }
 };
 
-export const deleteMedicine = async (id: Medicine['id']) => {
-  const url = new URL(`${API_BASE_URL}/medicines/${id}`);
+export const deleteMedicine = async (
+  id: Medicine['id'],
+): Promise<DeleteMedicineResponse> => {
+  const response = await fetch(`${API_BASE_URL}/medicines/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message ?? `HTTP error! Status: ${response.status}`);
+  }
+
+  return response.json();
+};
+
+export const unarchiveMedicine = async (id: Medicine['id']) => {
+  const url = new URL(`${API_BASE_URL}/medicines/unarchive/${id}`);
 
   const response = await fetch(url, {
-    method: 'DELETE',
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message ?? `HTTP error! Status: ${response.status}`);
+  }
+};
+
+export const unarchiveVariant = async (id: MedicineVariant['id']) => {
+  const url = new URL(`${API_BASE_URL}/medicines/unarchive/variant/${id}`);
+
+  const response = await fetch(url, {
+    method: 'POST',
   });
 
   if (!response.ok) {

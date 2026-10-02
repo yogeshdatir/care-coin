@@ -48,10 +48,12 @@ const PrescribedMedicinesForm = ({
               const handleMedicineSelect = (
                 selectedMedicine: Medicine[] | Medicine | null,
               ) => {
-                if (selectedMedicine && !Array.isArray(selectedMedicine)) {
-                  field.onChange(selectedMedicine.id);
-                  setValue(`medicines.${index}.medicineVariantId`, '');
-                }
+                if (!selectedMedicine || Array.isArray(selectedMedicine))
+                  return;
+                if (selectedMedicine.id === field.value) return;
+
+                field.onChange(selectedMedicine.id);
+                setValue(`medicines.${index}.medicineVariantId`, '');
               };
 
               return (
@@ -68,6 +70,7 @@ const PrescribedMedicinesForm = ({
                       onChange={handleMedicineSelect}
                       onCreate={handleCreateMedicine}
                       placeholder="Select a medicine"
+                      isOptionDisabled={(option) => !option.isActive}
                     />
                   </div>
                   <FieldDescription>

@@ -1,3 +1,4 @@
+import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
 import {
   Field,
@@ -38,18 +39,10 @@ import type {
   CreatePrescriptionRequestPayload,
   Doctor,
   Medicine,
-  MedicineVariant,
   Prescription,
-  PrescriptionMedicineFormRow,
 } from '@carecoin/shared-types';
 import { Pencil } from 'lucide-react';
 import { DeleteConfirmationDialog } from '../../doctors/components/DeleteConfirmationDialog';
-
-type LocationState = {
-  prescription: Prescription;
-  doctor: Doctor;
-  medicines: Medicine[];
-};
 
 const INITIAL_MEDICINE = {
   medicineId: '',
@@ -157,35 +150,8 @@ const PrescriptionsPage = () => {
     append(INITIAL_MEDICINE);
   };
 
-  const handlePrescriptionNav = ({
-    prescription,
-    currentPrescriptionDoctor,
-  }: {
-    prescription: Prescription;
-    currentPrescriptionDoctor: Doctor | undefined;
-  }) => {
-    const selectedPrescriptionMedicine = prescription.medicines?.map(
-      (prescribedMedicine: PrescriptionMedicineFormRow) => {
-        const result = medicines.find(
-          (medicine: Medicine) => medicine.id === prescribedMedicine.medicineId,
-        );
-        if (result?.variants && result.variants.length) {
-          const selectedVariant = result?.variants?.find(
-            (variant: MedicineVariant) =>
-              variant.id === prescribedMedicine.medicineVariantId,
-          );
-          if (selectedVariant) result.variants = [selectedVariant];
-        }
-        return result;
-      },
-    );
-    navigate(`${prescription.id}`, {
-      state: {
-        prescription,
-        doctor: currentPrescriptionDoctor,
-        medicines: selectedPrescriptionMedicine,
-      } as LocationState,
-    });
+  const handlePrescriptionNav = ({ id }: { id: Prescription['id'] }) => {
+    navigate(`${id}`);
   };
 
   const handleEdit = (id: Prescription['id']) => {
@@ -233,13 +199,24 @@ const PrescriptionsPage = () => {
                     </SelectTrigger>
                     <SelectContent position="popper">
                       <SelectGroup>
-                        {doctors.map(({ id: value, name: label }: Doctor) => {
-                          return (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          );
-                        })}
+                        {doctors.map(
+                          ({ id: value, name: label, isActive }: Doctor) => {
+                            return (
+                              <SelectItem
+                                key={value}
+                                value={value}
+                                disabled={!isActive}
+                              >
+                                <span className="flex items-center gap-2">
+                                  {label}
+                                  {!isActive && (
+                                    <Badge variant="outline">Archived</Badge>
+                                  )}
+                                </span>
+                              </SelectItem>
+                            );
+                          },
+                        )}
                       </SelectGroup>
                     </SelectContent>
                   </Select>
@@ -306,11 +283,7 @@ const PrescriptionsPage = () => {
         </thead>
         <tbody>
           {prescriptions.map((prescription, index) => {
-            const { id, doctorId, date, notes } = prescription;
-
-            const currentPrescriptionDoctor = doctors.find(
-              (doctor) => doctor.id === doctorId,
-            );
+            const { id, doctorName, date, notes } = prescription;
 
             return (
               <tr
@@ -318,15 +291,12 @@ const PrescriptionsPage = () => {
                 className="hover:bg-amber-100 cursor-pointer"
                 onClick={() =>
                   handlePrescriptionNav({
-                    prescription,
-                    currentPrescriptionDoctor,
+                    id,
                   })
                 }
               >
                 <td className="px-2 border">{index + 1}</td>
-                <td className="px-2 border">
-                  {currentPrescriptionDoctor?.name}
-                </td>
+                <td className="px-2 border">{doctorName}</td>
                 <td className="px-2 border">{date}</td>
                 <td className="px-2 border">{notes}</td>
                 <td
