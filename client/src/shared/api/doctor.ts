@@ -1,6 +1,8 @@
 import type {
   CreateDoctorRequestPayload,
+  DeleteDoctorResponse,
   Doctor,
+  UpdateDoctorRequestPayload,
 } from '@carecoin/shared-types';
 import { API_BASE_URL } from './config';
 
@@ -43,20 +45,19 @@ export const fetchDoctors = async ({
   }
 };
 
-export const deleteDoctor = async (id: Doctor['id']) => {
-  const url = new URL(`${API_BASE_URL}/doctors/${id}`);
-
-  const response = await fetch(url, {
+export const deleteDoctor = async (
+  id: Doctor['id'],
+): Promise<DeleteDoctorResponse> => {
+  const response = await fetch(`${API_BASE_URL}/doctors/${id}`, {
     method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
   });
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
     throw new Error(body.message ?? `HTTP error! Status: ${response.status}`);
   }
+
+  return response.json();
 };
 
 export async function fetchDoctorById(id: string): Promise<Doctor> {
@@ -67,3 +68,43 @@ export async function fetchDoctorById(id: string): Promise<Doctor> {
   }
   return response.json();
 }
+
+export const updateDoctor = async (
+  doctorId: Doctor['id'],
+  payload: UpdateDoctorRequestPayload,
+) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/doctors/${doctorId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = await response.json();
+
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+export const unarchiveDoctor = async (id: Doctor['id']) => {
+  const url = new URL(`${API_BASE_URL}/doctors/unarchive/${id}`);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message ?? `HTTP error! Status: ${response.status}`);
+  }
+};

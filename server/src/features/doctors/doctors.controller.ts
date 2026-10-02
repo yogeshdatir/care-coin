@@ -5,6 +5,7 @@ import {
   deleteDoctor,
   updateDoctor,
   getDoctorById,
+  unarchiveDoctor,
 } from './doctors.service';
 import { requireStringParam } from '../../shared/utils';
 
@@ -34,19 +35,11 @@ export async function handleCreateDoctor(req: Request, res: Response) {
 export async function handleDeleteDoctor(req: Request, res: Response) {
   try {
     const id = requireStringParam(req.params.id, 'id');
-    await deleteDoctor(id);
-    res.status(204).send();
+    const result = await deleteDoctor(id);
+    res.status(200).json(result);
   } catch (err: any) {
-    if (err.status === 400) {
-      return res.status(400).json({ message: err.message });
-    }
-    if (err.code === '23503') {
-      return res.status(409).json({
-        message: 'Cannot delete a doctor with existing prescriptions.',
-      });
-    }
-    if (err.status === 404) {
-      return res.status(404).json({ message: err.message });
+    if (err.status === 400 || err.status === 404) {
+      return res.status(err.status).json({ message: err.message });
     }
     throw err;
   }
@@ -64,6 +57,18 @@ export async function handleUpdateDoctor(req: Request, res: Response) {
     if (err.status === 404) {
       return res.status(404).json({ message: err.message });
     }
+    throw err;
+  }
+}
+
+export async function handleUnarchiveDoctor(req: Request, res: Response) {
+  try {
+    const id = requireStringParam(req.params.id, 'id');
+    await unarchiveDoctor(id);
+    res.status(204).send();
+  } catch (err: any) {
+    if (err.status === 404)
+      return res.status(404).json({ message: err.message });
     throw err;
   }
 }

@@ -82,6 +82,10 @@ export type UpdateDoctorRequestPayload = Omit<
   'id' | 'isActive' | 'archivedAt'
 >;
 
+export type DeleteDoctorResponse = {
+  archived: boolean; // true: soft-archived (in use), false: hard-deleted
+};
+
 export interface PrescriptionMedicineFormRow {
   medicineId: Medicine['id'];
   medicineName?: string;
