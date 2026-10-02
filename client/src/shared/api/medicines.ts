@@ -1,5 +1,6 @@
 import type {
   CreateMedicineRequestPayload,
+  DeleteMedicineResponse,
   Medicine,
   MedicineVariant,
   UpdateMedicineRequestPayload,
@@ -90,20 +91,19 @@ export const updateMedicine = async (
   }
 };
 
-export const deleteMedicine = async (id: Medicine['id']) => {
-  const url = new URL(`${API_BASE_URL}/medicines/${id}`);
-
-  const response = await fetch(url, {
+export const deleteMedicine = async (
+  id: Medicine['id'],
+): Promise<DeleteMedicineResponse> => {
+  const response = await fetch(`${API_BASE_URL}/medicines/${id}`, {
     method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
   });
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
     throw new Error(body.message ?? `HTTP error! Status: ${response.status}`);
   }
+
+  return response.json();
 };
 
 export const unarchiveMedicine = async (id: Medicine['id']) => {

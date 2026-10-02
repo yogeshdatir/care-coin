@@ -4,6 +4,7 @@ import type {
   MedicineVariant,
   CreateMedicineRequestPayload,
   UpdateMedicineRequestPayload,
+  DeleteMedicineResponse,
 } from '@carecoin/shared-types';
 import { emptyToNull } from '../../shared/utils';
 
@@ -177,32 +178,40 @@ export async function updateMedicine(
   }
 }
 
-export async function deleteMedicine(id: Medicine['id']): Promise<void> {
+export async function deleteMedicine(
+  id: Medicine['id'],
+): Promise<DeleteMedicineResponse> {
   const client = await pool.connect();
+  let archived = false;
 
   try {
     await client.query('BEGIN');
-
     await client.query('SAVEPOINT before_delete');
+
     try {
-      await client.query('DELETE FROM medicines WHERE id = $1', [id]);
-    } catch (err: any) {
-      if (err.code === '23503') {
-        await client.query('ROLLBACK TO SAVEPOINT before_delete');
-        await client.query(
-          `UPDATE medicine_variants SET is_active = false, archived_at = now() WHERE medicine_id = $1`,
-          [id],
-        );
-        await client.query(
-          `UPDATE medicines SET is_active = false, archived_at = now() WHERE id = $1`,
-          [id],
-        );
-      } else {
-        throw err;
+      const result = await client.query('DELETE FROM medicines WHERE id = $1', [
+        id,
+      ]);
+      if (result.rowCount === 0) {
+        throw Object.assign(new Error('Medicine not found'), { status: 404 });
       }
+    } catch (err: any) {
+      if (err.code !== '23503') throw err;
+
+      await client.query('ROLLBACK TO SAVEPOINT before_delete');
+      await client.query(
+        `UPDATE medicine_variants SET is_active = false, archived_at = now() WHERE medicine_id = $1`,
+        [id],
+      );
+      await client.query(
+        `UPDATE medicines SET is_active = false, archived_at = now() WHERE id = $1`,
+        [id],
+      );
+      archived = true;
     }
 
     await client.query('COMMIT');
+    return { archived };
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;

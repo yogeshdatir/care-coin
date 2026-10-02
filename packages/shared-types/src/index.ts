@@ -60,6 +60,10 @@ export type UpdateMedicineRequestPayload = Omit<
   })[];
 };
 
+export type DeleteMedicineResponse = {
+  archived: boolean; // true: soft-archived (in use), false: hard-deleted
+};
+
 export interface Doctor {
   id: string;
   name: string;

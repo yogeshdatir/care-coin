@@ -159,9 +159,27 @@ const MedicinesPage = () => {
   };
 
   const handleDeleteMedicine = async (id: Medicine['id']) => {
-    await deleteMedicine(id);
-    const fetchedMedicines: { data: Medicine[] } = await fetchMedicines({});
-    setMedicines(fetchedMedicines.data ?? []);
+    const { archived } = await deleteMedicine(id);
+
+    setMedicines((prev) =>
+      archived
+        ? prev.map((med) =>
+            med.id === id
+              ? {
+                  ...med,
+                  isActive: false,
+                  // backend archives all variants too, so mirror that
+                  variants: med.variants?.map((v) => ({
+                    ...v,
+                    isActive: false,
+                  })),
+                }
+              : med,
+          )
+        : prev.filter((med) => med.id !== id),
+    );
+
+    if (id === editingMedicineId) handleFormReset();
   };
 
   const handleMedicineUnarchive = async (id: Medicine['id']) => {
