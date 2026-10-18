@@ -11,7 +11,7 @@ import {
   useFormContext,
   type UseFieldArrayReturn,
 } from 'react-hook-form';
-import CreatableCombobox from './CreatableCombobox';
+import CreatableCombobox from '../../../../shared/components/CreatableCombobox';
 import { createMedicine } from '@/shared/api/medicines';
 import VariantRenderer from './VariantRenderer';
 

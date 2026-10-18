@@ -1,5 +1,4 @@
-import CreatableCombobox from '@/features/health/prescriptions/components/CreatableCombobox';
-import { createMedicine, fetchMedicines } from '@/shared/api/medicines';
+import CreatableCombobox from '@/shared/components/CreatableCombobox';
 import { Card, CardContent, CardHeader } from '@/shared/components/ui/card';
 import {
   Field,
@@ -19,15 +18,12 @@ import {
 import {
   EXPENSE_CATEGORIES,
   type OptionItem,
-  type CreateExpenseRequestPayload,
   type Expense,
-  type ExpenseCategory,
   type Medicine,
   type MedicineVariant,
   type Prescription,
   type Doctor,
 } from '@carecoin/shared-types';
-import { useEffect, useState } from 'react';
 import {
   Controller,
   FormProvider,
@@ -36,128 +32,61 @@ import {
   type SubmitHandler,
 } from 'react-hook-form';
 import VariantRenderer from './VariantRenderer';
-import { fetchPrescriptions } from '@/shared/api/prescription';
 import { Button } from '@/shared/components/ui/button';
 import DatePickerSimple from '@/shared/components/DatePicker';
-import { fetchDoctors } from '@/shared/api/doctor';
-import { getPrescriptionLabel } from '../helper';
-import { createExpense } from '@/shared/api/expense';
+import {
+  EMPTY_EXPENSE_FORM,
+  getPrescriptionLabel,
+  toExpensePayload,
+  type ExpenseFormValues,
+  toExpenseFormValues,
+} from '../helper';
+import { createExpense, updateExpense } from '@/shared/api/expense';
+import { createMedicine } from '@/shared/api/medicines';
+import { useCallback, useEffect } from 'react';
 
 type Props = {
+  expenses: Expense[];
   setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
+  medicines: Medicine[];
+  setMedicines: React.Dispatch<React.SetStateAction<Medicine[]>>;
+  prescriptions: Prescription[];
+  doctors: Doctor[];
+  editingExpenseId: Expense['id'] | null;
+  setEditingExpenseId: React.Dispatch<
+    React.SetStateAction<Expense['id'] | null>
+  >;
 };
 
-/**
- * What the form holds. Separate from the API payload on purpose:
- * - every input value is a string ('' = not set), so inputs stay controlled
- * - `medicineId` exists only to filter the variant options and is never sent
- */
-interface ExpenseFormValues {
-  date: Date | undefined;
-  category: ExpenseCategory | ''; // '' until the user picks one
-  amount: string;
-  description: string;
-  linkedPrescriptionId: string;
-  medicineId: string; // UI-only
-  linkedMedicineVariantId: string;
-  receiptUrl: string;
-}
-
-const EMPTY_EXPENSE_FORM: ExpenseFormValues = {
-  date: undefined,
-  category: '',
-  amount: '',
-  description: '',
-  linkedPrescriptionId: '',
-  medicineId: '',
-  linkedMedicineVariantId: '',
-  receiptUrl: '',
-};
-
-const isExpenseCategory = (value: unknown): value is ExpenseCategory =>
-  EXPENSE_CATEGORIES.some((category) => category.value === value);
-
-const emptyToUndefined = (value: string): string | undefined => {
-  const trimmed = value.trim();
-  return trimmed === '' ? undefined : trimmed;
-};
-
-/** Form values -> API payload. Lists every field explicitly, so UI-only fields cannot leak. */
-function toExpensePayload(
-  values: ExpenseFormValues,
-): CreateExpenseRequestPayload {
-  const { category } = values;
-  if (!isExpenseCategory(category)) throw new Error('Category is required');
-
-  return {
-    amount: Number(values.amount),
-    date: values.date ? values.date.toISOString() : null,
-    category,
-    description: emptyToUndefined(values.description),
-    domain: 'health', // 'general' arrives in v2
-    linkedPrescriptionId: emptyToUndefined(values.linkedPrescriptionId),
-    // a stale variant must not be sent after the category changed away from medicines
-    linkedMedicineVariantId:
-      category === 'medicines'
-        ? emptyToUndefined(values.linkedMedicineVariantId)
-        : undefined,
-    receiptUrl: emptyToUndefined(values.receiptUrl),
-  };
-}
-
-const ExpenseForm = ({ setExpenses }: Props) => {
-  const [medicines, setMedicines] = useState<Medicine[]>([]);
-  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    const { signal } = controller;
-    const getMedicines = async () => {
-      const fetchedMedicines: { data: Medicine[] } = await fetchMedicines({
-        signal,
-      });
-      setMedicines(fetchedMedicines?.data || []);
-    };
-    getMedicines();
-
-    const getPrescriptions = async () => {
-      const fetchedPrescriptions: { data: Prescription[] } =
-        await fetchPrescriptions({
-          signal,
-        });
-      setPrescriptions(fetchedPrescriptions?.data || []);
-    };
-    getPrescriptions();
-
-    const getDoctors = async () => {
-      const fetchedDoctors: { data: Doctor[] } | undefined = await fetchDoctors(
-        { signal },
-      );
-      setDoctors(fetchedDoctors?.data || []);
-    };
-    getDoctors();
-
-    return () => {
-      controller.abort();
-    };
-  }, []);
-
+const ExpenseForm = ({
+  expenses,
+  setExpenses,
+  medicines,
+  setMedicines,
+  prescriptions,
+  doctors,
+  editingExpenseId,
+  setEditingExpenseId,
+}: Props) => {
   const form = useForm<ExpenseFormValues>({
     defaultValues: EMPTY_EXPENSE_FORM,
   });
 
   const { register, handleSubmit, reset, control, setValue } = form;
 
-  const [category, medicineId] = useWatch({
-    control,
-    name: [`category`, 'medicineId'],
-  });
+  useEffect(() => {
+    const editingExpense = expenses.find((e) => e.id === editingExpenseId);
+    if (editingExpense) {
+      const values = toExpenseFormValues(editingExpense, medicines);
+      console.log({ editingExpense, values, medicineCount: medicines.length });
+      reset(values);
+    }
+  }, [editingExpenseId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const variantOptions =
-    medicines.find((medicine: Medicine) => {
-      return medicine.id === medicineId;
-    })?.variants ?? [];
+  const category = useWatch({
+    control,
+    name: `category`,
+  });
 
   const handleCreateMedicine = async (medicineName: string) => {
     const newMedicine = await createMedicine({ name: medicineName });
@@ -169,19 +98,32 @@ const ExpenseForm = ({ setExpenses }: Props) => {
     const expensePayload = toExpensePayload(data);
     console.log({ data, expensePayload });
 
-    const response = await createExpense(expensePayload);
-    setExpenses((prev) => [...prev, response]);
+    let response: Expense;
+    if (editingExpenseId) {
+      response = await updateExpense(editingExpenseId, expensePayload);
+      const updatedExpenses = expenses.map((expense: Expense) => {
+        if (expense.id === editingExpenseId) return response;
+        else return expense;
+      });
+      setExpenses(updatedExpenses);
+    } else {
+      response = await createExpense(expensePayload);
+      setExpenses((prev) => [...prev, response]);
+    }
 
     handleFormReset();
   };
 
-  const handleFormReset = () => {
+  const handleFormReset = useCallback(() => {
     reset(EMPTY_EXPENSE_FORM);
-  };
+    setEditingExpenseId(null);
+  }, [reset, setEditingExpenseId]);
 
   return (
     <Card className="flex flex-col gap-5">
-      <CardHeader>Add Expense</CardHeader>
+      <CardHeader>
+        <h3 className="font-bold text-lg">Add expense</h3>
+      </CardHeader>
       <CardContent>
         <FormProvider {...form}>
           <form
@@ -318,9 +260,7 @@ const ExpenseForm = ({ setExpenses }: Props) => {
                   name="linkedMedicineVariantId"
                   control={control}
                   rules={{
-                    required: variantOptions?.length
-                      ? 'Please select a variant...'
-                      : false,
+                    required: 'Please select a variant...',
                   }}
                   render={({ field, fieldState }) => {
                     const handleVariantSelect = (
@@ -422,7 +362,12 @@ const ExpenseForm = ({ setExpenses }: Props) => {
             </FieldGroup>
             <Field orientation="horizontal">
               <Button className="w-max">Save expense</Button>
-              <Button className="w-max" variant="outline" type="button">
+              <Button
+                className="w-max"
+                variant="outline"
+                type="button"
+                onClick={() => handleFormReset()}
+              >
                 Clear
               </Button>
             </Field>

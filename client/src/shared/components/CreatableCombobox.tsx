@@ -96,6 +96,7 @@ function CreatableCombobox<T>({
         placeholder={placeholder ?? 'Select an option'}
         style={{ textTransform: 'capitalize' }}
         aria-invalid={ariaInvalid}
+        disabled={disabled}
       />
       <ComboboxContent>
         <ComboboxEmpty>{emptyText}</ComboboxEmpty>

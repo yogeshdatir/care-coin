@@ -6,7 +6,7 @@ import {
 import type { Medicine, MedicineVariant } from '@carecoin/shared-types';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { createVariant } from '@/shared/api/medicines';
-import CreatableCombobox from '@/features/health/prescriptions/components/CreatableCombobox';
+import CreatableCombobox from '@/shared/components/CreatableCombobox';
 
 type Props = {
   medicines: Medicine[];
@@ -33,8 +33,6 @@ const VariantRenderer = ({
     name: `medicineId`,
   });
 
-  if (medicineId === '') return null;
-
   const getVariantLabel = ({ form, strength }: MedicineVariant) => {
     const label = strength !== '' && strength ? `${form} - ${strength}` : form;
     return label || '';
@@ -44,8 +42,6 @@ const VariantRenderer = ({
     medicines.find((medicine: Medicine) => {
       return medicine.id === medicineId;
     })?.variants ?? [];
-
-  if (variantOptions?.length === 0) return null;
 
   const handleCreateVariant = async (
     medicineId: Medicine['id'],
@@ -68,8 +64,10 @@ const VariantRenderer = ({
     return newVariant;
   };
 
+  const isDisabled = !medicineId;
+
   return (
-    <Field className="gap-0.5 max-w-[50%]">
+    <Field className="gap-0.5">
       <div className={className}>
         <FieldLabel htmlFor="select-form" className="flex-none!">
           Variant <span className="text-destructive">*</span>
@@ -85,11 +83,13 @@ const VariantRenderer = ({
           placeholder="Select a variant"
           isOptionDisabled={(option) => !option.isActive}
           ariaInvalid={ariaInvalid}
+          disabled={isDisabled}
         />
       </div>
       <FieldDescription>
-        Type to search, or add a new one as "Form - Strength" (e.g. "Tablet -
-        500mg").
+        {isDisabled
+          ? 'Select or create a medicine first.'
+          : 'Type to search, or add a new one as "Form - Strength" (e.g. "Tablet - 500mg").'}
       </FieldDescription>
     </Field>
   );
