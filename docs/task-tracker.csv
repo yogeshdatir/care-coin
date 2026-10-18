@@ -30,5 +30,20 @@ Infrastructure,Input validation (request bodies),Not started,Malformed requests 
 Infrastructure,Centralized error-handling middleware,Not started,Unhandled errors currently risk crashing the Express process
 Infrastructure,Shared state (replacing per-page local state),Not started,Deferred multiple times (quick-create sync list-to-detail nav)
 Infrastructure,Creatable combobox component,Done,See creatable-combobox-guide.md for the reusable pattern
-Expense,Everything,Not started,Deliberately deferred to the end
+Expense,Postgres table + seed data,Done,"NUMERIC(12,2) amount with a positive check; updated_at trigger; description column added with an ALTER for existing tables; seed is re-runnable (ON CONFLICT DO NOTHING)"
+Expense,Shared types and fixed category list,Done,"Expense, payload types, EXPENSE_DOMAINS and EXPENSE_CATEGORIES (value/label) in index.ts"
+Expense,Create,In progress,"Backend drafted and tested against a Postgres engine; copy into server/ and verify in the repo. Validates amount > 0, real date, category from the fixed list and description up to 200 characters"
+Expense,Read (list),In progress,{ data: [...] } newest first with optional domain filter. Returns ids only until derived names are added
+Expense,Read (detail),In progress,
+Expense,Update,In progress,PUT full replace; optional fields not sent are cleared
+Expense,Delete,In progress,Hard delete; nothing references expenses
+Expense,Derived names in read responses,Not started,"medicineName, variantLabel, doctor name and prescription date via joins; read-only fields omitted from payloads"
+Expense,Medicine-variant validation rule,Not started,Variant required when category = medicines and rejected for other categories
+Expense,UI: add/update form + list,Not started,"Wireframe agreed: form on top, list below; medicine and variant selects only for Medicines; Description field; Item column"
+Expense,UI: add another item from the same receipt,Not started,"Optional convenience: keeps date, receipt and prescription"
+Expense,Tests (Jest + supertest),Not started,Service and route tests
+Expense,v2: user-created categories (ExpenseCategory table),Not started,Seven v1 slugs become the first rows; Expense.category becomes a foreign key
+Expense,v2: receipt + line items table,Not started,Only if bill totals or per-receipt views are needed; existing rows migrate as one-item receipts
+Expense,v2: item catalog (tests and procedures),Not started,Only if analysis by test or procedure is needed; description stays free text until then
+Expense,v2: general domain,Not started,domain = 'general' and its categories
 Auth,Multi-user support,Not started,User entity reserved in schema unused

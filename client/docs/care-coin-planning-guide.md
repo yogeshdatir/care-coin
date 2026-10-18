@@ -8,6 +8,7 @@
 4. [Folder structure](#4-folder-structure)
 5. [Sidebar / pages nav list](#5-sidebar--pages-nav-list)
 6. [Routing guide](#6-routing-guide)
+7. [Expenses page (v1)](#7-expenses-page-v1)
 
 ---
 
@@ -89,25 +90,39 @@ A personal health tracker starting as a single app, built so it can split into i
 | `startDate` | when this medicine begins — may differ from `Prescription.date` |
 | `endDate?` | |
 
-**Expense**
+**Expense** — one payment or one receipt item (see design notes)
 | Field | Notes |
 |---|---|
 | `id` | PK |
 | `userId` | FK |
-| `amount` | |
+| `amount` | `NUMERIC(12,2)`, greater than 0 |
 | `date` | |
-| `category` | |
-| `domain` | `'health' \| 'general'` — `'general'` arrives in v2 |
-| `linkedPrescriptionId?` | |
-| `linkedMedicineVariantId?` | replaces `linkedMedicineId?` — price tracking needs to know which variant (form + strength) was bought |
-| `receiptUrl?` | |
+| `category` | one `value` from the fixed `EXPENSE_CATEGORIES` list (see below); validated at the API, not in the DB |
+| `description?` | free text, up to 200 characters — item name or details, e.g. a test name. For display and search, not for grouping |
+| `domain` | `'health' \| 'general'` — defaults to `'health'`; `'general'` arrives in v2 |
+| `linkedPrescriptionId?` | optional for every category (over-the-counter purchases have none) |
+| `linkedMedicineVariantId?` | exactly one variant — required when `category = 'medicines'`, not allowed for other categories. Replaces `linkedMedicineId?`: price tracking needs to know which variant (form + strength) was bought |
+| `receiptUrl?` | the same URL repeats on every expense entered from one receipt |
 
-**ExpenseCategory** (v2)
+**`EXPENSE_CATEGORIES`** (v1, fixed list in `shared-types`, same `{ value, label }` shape as `MEDICINE_FORMS`)
+| `value` | `label` |
+|---|---|
+| `consultation` | Consultation |
+| `medicines` | Medicines |
+| `lab-tests` | Lab tests |
+| `imaging` | Imaging (X-ray / Scan) |
+| `procedure` | Procedure |
+| `hospitalization` | Hospitalization |
+| `therapy` | Therapy |
+
+**ExpenseCategory** (v2) — replaces the fixed list so users can add their own categories
 | Field | Notes |
 |---|---|
 | `id` | PK |
 | `name` | |
 | `domain` | `'health' \| 'general'` |
+
+The seven v1 `value` slugs become the first rows, and `Expense.category` becomes a foreign key to this table.
 
 ### Relationships
 
@@ -121,7 +136,8 @@ erDiagram
   DOCTOR ||--o{ PRESCRIPTION : issues
   PRESCRIPTION ||--o{ PRESCRIPTION_MEDICINE : contains
   MEDICINE_VARIANT ||--o{ PRESCRIPTION_MEDICINE : "prescribed as"
-  PRESCRIPTION_MEDICINE ||--o{ EXPENSE : "linked to"
+  PRESCRIPTION ||--o{ EXPENSE : "paid for"
+  MEDICINE_VARIANT ||--o{ EXPENSE : "bought as"
   USER {
     string id PK
     string name
@@ -172,6 +188,7 @@ erDiagram
     number amount
     date date
     string category
+    string description
     string domain
     string linkedPrescriptionId FK
     string linkedMedicineVariantId FK
@@ -187,6 +204,14 @@ erDiagram
 - `Medicine detail` page lists its variants (with prices), and shows prescription history by listing `PrescriptionMedicine` rows across all variants of that medicine.
 - The quick-create combobox pattern (see `react-patterns-learned.md`) now applies at two levels: create/select a `Medicine`, then create/select a `MedicineVariant` (form + strength) under it — same pattern, one more hop.
 - `Expense.domain` exists from v1 even though only `'health'` is used — avoids a migration when v2 adds general expenses.
+- **One expense per item.** Each line on a receipt is entered as its own expense, so a pharmacy bill with three medicines is three expenses that share the same `receiptUrl` and date. The receipt itself is evidence, not a record. Split purchases, refills and different quantities are likewise separate expenses, so there is no quantity field.
+- **Medicines link to one variant.** A `medicines` expense carries exactly one `linkedMedicineVariantId`, which keeps per-medicine totals, refill counts and price history exact without a join table. One prescription can have many expenses (one medicine here, another there; refills repeat the same prescription and variant with a new date).
+- **Categories are a fixed list in v1** (`EXPENSE_CATEGORIES`, validated at the API like `MEDICINE_FORMS`) because a user-editable list needs its own CRUD. It becomes the `ExpenseCategory` table in v2, and the slug values become the first rows.
+- **`description` is free text on purpose.** It supports search and filtering by text (`ILIKE`) and shows the item name in the list. Anything that must be grouped or totalled belongs in a structured field (`category`, `date`, `linkedPrescriptionId`, `linkedMedicineVariantId`), because free text varies by spelling and wording.
+- **Read responses carry derived names.** The expense list needs `medicineName`, `variantLabel`, the doctor's name and the prescription date. These are server-derived, read-only fields, resolved by joins and omitted from request payloads (the same rule as `doctorName` on prescriptions).
+- **v2 options when v1 is outgrown:**
+  - Receipt header plus line items table, if bill totals or "everything on this receipt" are needed. Existing rows migrate as one-item receipts.
+  - Item catalog (named tests and procedures that expenses link to), if analysis by test or procedure is needed. It fits alongside the `ExpenseCategory` table.
 - Foreign keys (`prescriptionId`, `linkedMedicineVariantId`, etc.) are the only coupling between Health and Expense entities — keep it that way so each domain can own its own store independently.
 - `userId` on `Medicine`, `Prescription`, and `Expense` is kept in the schema now (cheap insurance) but not populated/used in v1 — avoids a migration touching every table if multi-user is added later.
 - `mode` is an app-level setting (local storage / `AppSettings` singleton) in v1/v2, not read from `User`, since there's no `User` row yet. Move it onto `User` only when multi-user actually lands.
@@ -271,17 +296,17 @@ Mode filtering is a single lookup in the host layout — no per-page logic neede
 
 ## 6. Routing guide
 
-| Route                | Resolves to                                                  |
-| -------------------- | ------------------------------------------------------------ |
-| `/`                  | Dashboard (host)                                             |
-| `/medicines`         | List (health module)                                         |
-| `/medicines/:id`     | Detail — dosage/frequency history via `PrescriptionMedicine` |
-| `/prescriptions`     | List (health module)                                         |
-| `/prescriptions/:id` | Detail                                                       |
-| `/expenses`          | List (health module, `domain=health`, v1)                    |
-| `/expenses/general`  | List (expense module, `domain=general`, v2)                  |
-| `/expenses/:id`      | Detail (either module, resolved by `domain`)                 |
-| `/settings`          | Host                                                         |
+| Route                | Resolves to                                                                            |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| `/`                  | Dashboard (host)                                                                       |
+| `/medicines`         | List (health module)                                                                   |
+| `/medicines/:id`     | Detail — dosage/frequency history via `PrescriptionMedicine`                           |
+| `/prescriptions`     | List (health module)                                                                   |
+| `/prescriptions/:id` | Detail                                                                                 |
+| `/expenses`          | Add/update form on top, list below (health module, `domain=health`, v1)                |
+| `/expenses/general`  | List (expense module, `domain=general`, v2)                                            |
+| `/expenses/:id`      | Detail (v2+, either module, resolved by `domain`); v1 edits in the form on `/expenses` |
+| `/settings`          | Host                                                                                   |
 
 **Guidelines**
 
@@ -289,6 +314,23 @@ Mode filtering is a single lookup in the host layout — no per-page logic neede
 - Routes are lazy-loaded (`React.lazy`) per module folder now, so swapping a lazy import for a Module Federation remote import later is a one-line change.
 - Mode context (from Settings/onboarding) gates which route configs the host merges in — not the router itself, so no route guards needed in v1/v2.
 - `/expenses/:id` needs a `domain` param or lookup to route to the correct module's detail component once both exist (v2+).
+
+---
+
+## 7. Expenses page (v1)
+
+One page, `/expenses`, with the form on top and the list below.
+
+| Area                        | Behavior                                                                                                                                                                                                                                                                                                         |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Form fields                 | Date, Category (fixed list), Amount, Description (optional), Prescription (optional), Receipt URL (optional)                                                                                                                                                                                                     |
+| Add vs update               | The same form. Edit on a list row loads it into the form and the title and button change to "Update expense" with Cancel                                                                                                                                                                                         |
+| Medicine and variant        | Shown only when Category = Medicines. The medicine select only filters the variants; only `linkedMedicineVariantId` is submitted, and it is required. Changing the medicine clears the variant, and changing the category away from Medicines clears it in the category's change handler (no effect watching it) |
+| List columns                | Date, Category, Item, Prescription, Amount, Receipt, Actions                                                                                                                                                                                                                                                     |
+| Item column                 | Medicines: medicine name plus variant label (the description, if any, under it). Other categories: the description                                                                                                                                                                                               |
+| Header                      | Count, total and a category filter                                                                                                                                                                                                                                                                               |
+| Delete                      | Confirmation first, using the shared delete dialog                                                                                                                                                                                                                                                               |
+| Receipts with several items | Enter each item as its own expense. A convenience button, "add another item from this receipt", can keep the date, receipt and prescription and ask only for the medicine and amount                                                                                                                             |
 
 ---
 

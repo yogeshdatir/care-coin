@@ -1,9 +1,9 @@
-export interface MedicineFormItem {
-  value: string;
+export interface OptionItem<T extends string = string> {
+  value: T;
   label: string;
 }
 
-export const MEDICINE_FORMS: MedicineFormItem[] = [
+export const MEDICINE_FORMS: OptionItem[] = [
   { value: 'tablet', label: 'Tablet' },
   { value: 'capsule', label: 'Capsule' },
   { value: 'lozenge', label: 'Lozenge' },
@@ -120,3 +120,36 @@ export type UpdatePrescriptionRequestPayload = Omit<
   Prescription,
   'id' | 'doctorName'
 >;
+
+export const EXPENSE_DOMAINS = ['health', 'general'] as const;
+export type ExpenseDomain = (typeof EXPENSE_DOMAINS)[number];
+
+// `satisfies` (not a `: OptionItem[]` annotation) keeps the literal values,
+// so ExpenseCategory is a real union instead of widening to string.
+export const EXPENSE_CATEGORIES = [
+  { value: 'consultation', label: 'Consultation' },
+  { value: 'medicines', label: 'Medicines' },
+  { value: 'lab-tests', label: 'Lab tests' },
+  { value: 'imaging', label: 'Imaging (X-ray / Scan)' },
+  { value: 'procedure', label: 'Procedure' },
+  { value: 'hospitalization', label: 'Hospitalization' },
+  { value: 'therapy', label: 'Therapy' },
+] as const satisfies readonly OptionItem[];
+
+export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number]['value'];
+
+export interface Expense {
+  id: string;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  category: ExpenseCategory;
+  description?: string; // item name/details, e.g. test name
+  domain: ExpenseDomain;
+  linkedPrescriptionId?: string;
+  linkedMedicineVariantId?: string;
+  receiptUrl?: string;
+}
+
+export type CreateExpenseRequestPayload = Omit<Expense, 'id'>;
+
+export type UpdateExpenseRequestPayload = Omit<Expense, 'id'>;

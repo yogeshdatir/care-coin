@@ -27,7 +27,7 @@ import {
   MEDICINE_FORMS,
   type CreateMedicineRequestPayload,
   type Medicine,
-  type MedicineFormItem,
+  type OptionItem,
   type MedicineVariant,
   type UpdateMedicineRequestPayload,
 } from '@carecoin/shared-types';
@@ -253,7 +253,7 @@ const MedicinesPage = () => {
                             <SelectContent position="popper">
                               <SelectGroup>
                                 {MEDICINE_FORMS.map(
-                                  ({ value, label }: MedicineFormItem) => {
+                                  ({ value, label }: OptionItem) => {
                                     return (
                                       <SelectItem key={value} value={value}>
                                         {label}
