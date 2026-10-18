@@ -22,6 +22,7 @@ interface CreatableComboboxProps<T> {
   disabled?: boolean;
   placeholder?: string;
   isOptionDisabled?: (option: T) => boolean;
+  ariaInvalid?: boolean;
 }
 
 function CreatableCombobox<T>({
@@ -36,6 +37,7 @@ function CreatableCombobox<T>({
   disabled,
   placeholder,
   isOptionDisabled,
+  ariaInvalid = false,
 }: CreatableComboboxProps<T>) {
   const [inputValue, setInputValue] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -93,6 +95,7 @@ function CreatableCombobox<T>({
       <ComboboxInput
         placeholder={placeholder ?? 'Select an option'}
         style={{ textTransform: 'capitalize' }}
+        aria-invalid={ariaInvalid}
       />
       <ComboboxContent>
         <ComboboxEmpty>{emptyText}</ComboboxEmpty>

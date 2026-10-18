@@ -16,6 +16,7 @@ type Props = {
   ) => void;
   value: string;
   className?: string;
+  ariaInvalid: boolean;
 };
 
 const VariantRenderer = ({
@@ -24,6 +25,7 @@ const VariantRenderer = ({
   handleVariantSelect,
   value,
   className = 'flex flex-row items-center gap-2',
+  ariaInvalid,
 }: Props) => {
   const { control } = useFormContext();
   const medicineId: Medicine['id'] = useWatch({
@@ -42,6 +44,8 @@ const VariantRenderer = ({
     medicines.find((medicine: Medicine) => {
       return medicine.id === medicineId;
     })?.variants ?? [];
+
+  if (variantOptions?.length === 0) return null;
 
   const handleCreateVariant = async (
     medicineId: Medicine['id'],
@@ -80,6 +84,7 @@ const VariantRenderer = ({
           onCreate={(text) => handleCreateVariant(medicineId, text)}
           placeholder="Select a variant"
           isOptionDisabled={(option) => !option.isActive}
+          ariaInvalid={ariaInvalid}
         />
       </div>
       <FieldDescription>

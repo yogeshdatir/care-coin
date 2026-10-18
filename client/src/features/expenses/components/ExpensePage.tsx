@@ -22,12 +22,10 @@ const ExpensePage = () => {
     };
   }, []);
 
-  const addExpense = () => {};
-
   return (
     <div>
       <h1>Expenses</h1>
-      <ExpenseForm addExpense={addExpense} />
+      <ExpenseForm setExpenses={setExpenses} />
       <ExpenseList expenses={expenses} />
     </div>
   );

@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Expenses page</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#f4f4f2}
+a{color:#222}a:hover{color:#000}
+input,select,button{font:inherit}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid #222;outline-offset:2px}
+</style>
+</helmet>
+<div style="min-height: 100vh; box-sizing: border-box; background: #f4f4f2; color: #222; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 14px; padding: 24px 16px 48px;">
+<div style="max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+
+<!-- Page header -->
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px;">
+<h1 style="margin: 0; font-size: 24px; font-weight: 600;">Expenses</h1>
+<span style="color: #666; font-size: 13px;">Wireframe: /expenses</span>
+</div>
+
+<!-- Add / update form -->
+<section style="background: #fff; border: 1px solid #bbb; border-radius: 6px; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600;">Add expense</h2>
+<span style="color: #666; font-size: 12px; border: 1px dashed #999; padding: 2px 8px; border-radius: 4px;">Title becomes "Update expense" + Cancel button when editing</span>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 16px;">
+<label style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 6px; font-weight: 500;">Date *
+<input type="date" value="2026-10-11" style="height: 40px; box-sizing: border-box; padding: 0 10px; border: 1px solid #999; border-radius: 4px; background: #fff;">
+</label>
+<label style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 6px; font-weight: 500;">Category *
+<select value="{{category}}" onChange="{{onCategory}}" style="height: 40px; box-sizing: border-box; padding: 0 10px; border: 1px solid #999; border-radius: 4px; background: #fff;">
+<option value="consultation">Consultation</option>
+<option value="medicines">Medicines</option>
+<option value="lab-tests">Lab tests</option>
+<option value="imaging">Imaging (X-ray / Scan)</option>
+<option value="procedure">Procedure</option>
+<option value="hospitalization">Hospitalization</option>
+<option value="therapy">Therapy</option>
+</select>
+</label>
+<label style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 6px; font-weight: 500;">Amount (₹) *
+<input type="number" placeholder="0.00" style="height: 40px; box-sizing: border-box; padding: 0 10px; border: 1px solid #999; border-radius: 4px; background: #fff;">
+</label>
+</div>
+
+<!-- Medicine + variant: only when category = Medicines -->
+<sc-if value="{{showMedicine}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 8px; border: 1px dashed #999; border-radius: 6px; padding: 16px;">
+<span style="color: #666; font-size: 12px;">Shown only when Category = Medicines. The medicine select only filters the variants; the variant is what gets saved (required).</span>
+<div style="display: flex; flex-wrap: wrap; gap: 16px;">
+<label style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 6px; font-weight: 500;">Medicine *
+<select style="height: 40px; box-sizing: border-box; padding: 0 10px; border: 1px solid #999; border-radius: 4px; background: #fff;">
+<option>Select or create medicine</option>
+<option>Metformin</option>
+<option>Atorvastatin</option>
+<option>Volini</option>
+</select>
+</label>
+<label style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 6px; font-weight: 500;">Variant *
+<select style="height: 40px; box-sizing: border-box; padding: 0 10px; border: 1px solid #999; border-radius: 4px; background: #fff;">
+<option>Select medicine first</option>
+<option>Tablet - 500mg</option>
+<option>Tablet - 1000mg</option>
+</select>
+</label>
+</div>
+</div>
+</sc-if>
+
+<label style="display: flex; flex-direction: column; gap: 6px; font-weight: 500;">Description <span style="font-weight: 400; color: #666;">(optional, max 200 characters)</span>
+<input type="text" maxlength="200" placeholder="e.g. HbA1c + lipid profile, MRI knee" style="height: 40px; box-sizing: border-box; padding: 0 10px; border: 1px solid #999; border-radius: 4px; background: #fff;">
+</label>
+
+<div style="display: flex; flex-wrap: wrap; gap: 16px;">
+<label style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 6px; font-weight: 500;">Prescription <span style="font-weight: 400; color: #666;">(optional)</span>
+<select style="height: 40px; box-sizing: border-box; padding: 0 10px; border: 1px solid #999; border-radius: 4px; background: #fff;">
+<option>None</option>
+<option>Dr. Ananya Shah · 05 Jan 2026</option>
+<option>Dr. Rohan Mehta · 10 Feb 2026</option>
+<option>Dr. Priya Nair · 02 Mar 2026</option>
+</select>
+</label>
+<label style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 6px; font-weight: 500;">Receipt URL <span style="font-weight: 400; color: #666;">(optional)</span>
+<input type="text" placeholder="/uploads/receipt.jpg" style="height: 40px; box-sizing: border-box; padding: 0 10px; border: 1px solid #999; border-radius: 4px; background: #fff;">
+</label>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 12px;">
+<button type="button" style="height: 44px; padding: 0 24px; border: 1px solid #222; border-radius: 4px; background: #222; color: #fff; font-weight: 500; cursor: pointer;">Save expense</button>
+<button type="button" style="height: 44px; padding: 0 24px; border: 1px solid #999; border-radius: 4px; background: #fff; color: #222; cursor: pointer;">Clear</button>
+</div>
+</section>
+
+<!-- List -->
+<section style="background: #fff; border: 1px solid #bbb; border-radius: 6px; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600;">All expenses</h2>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+<span style="color: #444;">6 expenses · Total <strong>₹4,850.50</strong></span>
+<label style="display: flex; align-items: center; gap: 8px;">Filter
+<select style="height: 40px; box-sizing: border-box; padding: 0 10px; border: 1px solid #999; border-radius: 4px; background: #fff;">
+<option>All categories</option>
+<option>Consultation</option>
+<option>Medicines</option>
+<option>Lab tests</option>
+</select>
+</label>
+</div>
+</div>
+
+<div style="overflow-x: auto;">
+<table style="width: 100%; min-width: 760px; border-collapse: collapse; text-align: left;">
+<thead>
+<tr style="background: #eee;">
+<th style="padding: 10px 12px; border-bottom: 1px solid #999; font-weight: 600;">Date</th>
+<th style="padding: 10px 12px; border-bottom: 1px solid #999; font-weight: 600;">Category</th>
+<th style="padding: 10px 12px; border-bottom: 1px solid #999; font-weight: 600;">Item</th>
+<th style="padding: 10px 12px; border-bottom: 1px solid #999; font-weight: 600;">Prescription</th>
+<th style="padding: 10px 12px; border-bottom: 1px solid #999; font-weight: 600; text-align: right;">Amount</th>
+<th style="padding: 10px 12px; border-bottom: 1px solid #999; font-weight: 600;">Receipt</th>
+<th style="padding: 10px 12px; border-bottom: 1px solid #999; font-weight: 600; text-align: right;">Actions</th>
+</tr>
+</thead>
+<tbody><tr>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">15 Mar 2026</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">Lab tests</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">HbA1c + lipid profile</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; color: #666;">—</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right;">₹1,850.00</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;"><a href="#">View</a></td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right; white-space: nowrap;"><a href="#">Edit</a> · <a href="#">Delete</a></td>
+</tr>
+<tr>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">02 Mar 2026</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">Consultation</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; color: #666;">—</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">Dr. Priya Nair · 02 Mar</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right;">₹1,200.00</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; color: #666;">—</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right; white-space: nowrap;"><a href="#">Edit</a> · <a href="#">Delete</a></td>
+</tr>
+<tr>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">11 Feb 2026</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">Medicines</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">Volini · topical</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; color: #666;">—</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right;">₹215.00</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; color: #666;">—</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right; white-space: nowrap;"><a href="#">Edit</a> · <a href="#">Delete</a></td>
+</tr>
+<tr>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">10 Feb 2026</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">Consultation</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">Lower back pain follow-up</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">Dr. Rohan Mehta · 10 Feb</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right;">₹800.00</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; color: #666;">—</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right; white-space: nowrap;"><a href="#">Edit</a> · <a href="#">Delete</a></td>
+</tr>
+<tr>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">06 Jan 2026</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">Medicines</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">Metformin · tablet 500mg</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd;">Dr. Ananya Shah · 05 Jan</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right;">₹185.50</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; color: #666;">—</td>
+<td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right; white-space: nowrap;"><a href="#">Edit</a> · <a href="#">Delete</a></td>
+</tr>
+<tr>
+<td style="padding: 12px;">05 Jan 2026</td>
+<td style="padding: 12px;">Consultation</td>
+<td style="padding: 12px; color: #666;">—</td>
+<td style="padding: 12px;">Dr. Ananya Shah · 05 Jan</td>
+<td style="padding: 12px; text-align: right;">₹600.00</td>
+<td style="padding: 12px; color: #666;">—</td>
+<td style="padding: 12px; text-align: right; white-space: nowrap;"><a href="#">Edit</a> · <a href="#">Delete</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+<span style="color: #666; font-size: 12px;">Item = medicine name + variant for Medicines, otherwise the description; for a medicine row, its description (if any) shows under the name. Edit loads the row into the form above (no separate page). Delete asks for confirmation first. Newest first.</span>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1040}}'>
+class Component extends DCLogic {
+  state = { category: 'medicines' };
+  renderVals() {
+    return {
+      category: this.state.category,
+      showMedicine: this.state.category === 'medicines',
+      onCategory: (e) => this.setState({ category: e.target.value }),
+    };
+  }
+}
+</script>
+</body>
+</html>

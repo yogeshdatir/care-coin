@@ -7,6 +7,7 @@ import {
   type ExpenseDomain,
 } from '@carecoin/shared-types';
 import { requireStringParam } from '../../shared/utils';
+import { normalizeDate } from './expenses.date';
 import {
   createExpense,
   deleteExpense,
@@ -16,7 +17,6 @@ import {
   updateExpense,
 } from './expenses.service';
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_DESCRIPTION_LENGTH = 200;
 
 const isDomain = (value: unknown): value is ExpenseDomain =>
@@ -27,11 +27,6 @@ const CATEGORY_VALUES = EXPENSE_CATEGORIES.map((c) => c.value);
 const isCategory = (value: unknown): value is ExpenseCategory =>
   CATEGORY_VALUES.includes(value as ExpenseCategory);
 
-/** Rejects impossible dates like 2026-02-31 that match the format. */
-const isRealDate = (value: string) =>
-  DATE_RE.test(value) &&
-  new Date(`${value}T00:00:00Z`).toISOString().startsWith(value);
-
 /** Validates the body shared by create (POST) and update (PUT). */
 function parsePayload(body: any): CreateExpenseRequestPayload {
   const amount =
@@ -40,8 +35,10 @@ function parsePayload(body: any): CreateExpenseRequestPayload {
     throw httpError(400, 'amount must be a number greater than 0');
   }
 
-  const date = typeof body.date === 'string' ? body.date.trim() : '';
-  if (!isRealDate(date)) throw httpError(400, 'date is required (YYYY-MM-DD)');
+  // Accepts ISO or locale strings; always stored as YYYY-MM-DD.
+  const date = normalizeDate(body?.date);
+  if (!date)
+    throw httpError(400, 'date is required (e.g. 2026-10-12 or 12/10/2026)');
 
   const category = body.category;
   if (!isCategory(category)) {
