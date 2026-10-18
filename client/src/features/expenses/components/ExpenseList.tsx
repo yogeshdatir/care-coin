@@ -73,7 +73,6 @@ const ExpenseList = ({
       </CardHeader>
       <CardContent>
         <Table>
-          <TableCaption>A list of your recent expenses.</TableCaption>
           <TableHeader>
             <TableRow className="bg-gray-200 border-gray-600 border-b">
               <TableHead className="w-[100px]">Date</TableHead>
