@@ -1,3 +1,4 @@
+import { expensesRoutes } from '@/features/expenses/routes';
 import { doctorRoutes } from '@/features/health/doctors/routes';
 import { medicineRoutes } from '@/features/health/medicines/routes';
 import { prescriptionRoutes } from '@/features/health/prescriptions/routes';
@@ -9,7 +10,7 @@ const useAppRoutes = () => {
     ...prescriptionRoutes,
   ];
 
-  return [...healthRoutes];
+  return [...healthRoutes, ...expensesRoutes];
 };
 
 export default useAppRoutes;

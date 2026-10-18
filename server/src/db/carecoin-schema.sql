@@ -99,6 +99,31 @@ CREATE INDEX IF NOT EXISTS idx_prescription_medicines_prescription_id ON prescri
 CREATE INDEX IF NOT EXISTS idx_prescription_medicines_variant_id ON prescription_medicines(medicine_variant_id);
 
 -- ============================================================
+-- expenses
+-- domain is validated at the API layer (like medicine_variants.form),
+-- so its allowed values are not duplicated here.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS expenses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
+  date DATE NOT NULL,
+  category TEXT NOT NULL,
+  domain TEXT NOT NULL DEFAULT 'health',
+  linked_prescription_id UUID REFERENCES prescriptions(id),
+  linked_medicine_variant_id UUID REFERENCES medicine_variants(id),
+  receipt_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- description: free-text item name/details (e.g. test name). Capped at 200 chars by the API.
+ALTER TABLE expenses
+  ADD COLUMN IF NOT EXISTS description TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_expenses_prescriptions_id ON expenses(linked_prescription_id);
+CREATE INDEX IF NOT EXISTS idx_expenses_medicine_variants_id ON expenses(linked_medicine_variant_id);
+
+-- ============================================================
 -- updated_at auto-touch trigger
 -- Keeps updated_at accurate without every UPDATE query having to
 -- remember to set it manually.
@@ -137,4 +162,9 @@ CREATE TRIGGER trg_prescriptions_updated_at
 DROP TRIGGER IF EXISTS trg_prescription_medicines_updated_at ON prescription_medicines;
 CREATE TRIGGER trg_prescription_medicines_updated_at
   BEFORE UPDATE ON prescription_medicines
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_expenses_updated_at ON expenses;
+CREATE TRIGGER trg_expenses_updated_at
+  BEFORE UPDATE ON expenses
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();

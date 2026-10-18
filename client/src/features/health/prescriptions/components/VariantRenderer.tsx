@@ -4,7 +4,7 @@ import {
   FieldLabel,
 } from '@/shared/components/ui/field';
 import type { Medicine, MedicineVariant } from '@carecoin/shared-types';
-import CreatableCombobox from './CreatableCombobox';
+import CreatableCombobox from '../../../../shared/components/CreatableCombobox';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { createVariant } from '@/shared/api/medicines';
 

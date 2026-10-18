@@ -7,6 +7,7 @@ const Sidebar = () => {
       <NavLink to="/medicines">Medicines</NavLink>
       <NavLink to="/doctors">Doctors</NavLink>
       <NavLink to="/prescriptions">Prescriptions</NavLink>
+      <NavLink to="/expenses">Expenses</NavLink>
       <NavLink to="/settings">Settings</NavLink>
     </div>
   );
