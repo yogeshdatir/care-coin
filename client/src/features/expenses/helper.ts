@@ -1,10 +1,12 @@
 import {
   EXPENSE_CATEGORIES,
+  MEDICINE_FORMS,
   type CreateExpenseRequestPayload,
   type Doctor,
   type Expense,
   type ExpenseCategory,
   type Medicine,
+  type MedicineVariant,
   type Prescription,
 } from '@carecoin/shared-types';
 
@@ -52,7 +54,7 @@ export function toExpensePayload(
 
   return {
     amount: Number(values.amount),
-    date: values.date ? values.date.toISOString() : null,
+    date: values.date ? values.date.toISOString() : '',
     category,
     description: emptyToUndefined(values.description),
     domain: 'health', // 'general' arrives in v2
@@ -120,3 +122,43 @@ export const getTotalOfExpenses = (expenses: Expense[]) => {
     return acc + expense.amount;
   }, 0);
 };
+
+/** "Tablet - 500mg" — same format the variant field asks for. */
+export const getVariantLabel = ({
+  form,
+  strength,
+}: MedicineVariant): string => {
+  const formLabel = MEDICINE_FORMS.find((f) => f.value === form)?.label;
+  return [formLabel, strength].filter(Boolean).join(' - ');
+};
+
+export const getCategoryLabel = (category: Expense['category']): string =>
+  EXPENSE_CATEGORIES.find((c) => c.value === category)?.label ?? category;
+
+/** Display name for an expense row. */
+export const getExpenseItemLabel = (
+  expense: Expense,
+  medicines: readonly Medicine[],
+): string => {
+  const { category, description, linkedMedicineVariantId } = expense;
+
+  if (category === 'medicines' && linkedMedicineVariantId) {
+    for (const medicine of medicines) {
+      const variant = medicine.variants?.find(
+        (v) => v.id === linkedMedicineVariantId,
+      );
+      if (variant) {
+        const variantLabel = getVariantLabel(variant);
+        return variantLabel
+          ? `${medicine.name} · ${variantLabel}`
+          : medicine.name;
+      }
+    }
+  }
+
+  return description?.trim() || getCategoryLabel(category);
+};
+
+/** Newest first. Equal dates keep their existing order (Array.sort is stable). */
+export const sortExpenses = (expenses: readonly Expense[]): Expense[] =>
+  [...expenses].sort((a, b) => b.date.localeCompare(a.date));

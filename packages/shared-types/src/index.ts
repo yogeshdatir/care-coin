@@ -141,7 +141,7 @@ export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number]['value'];
 export interface Expense {
   id: string;
   amount: number;
-  date: string | null; // YYYY-MM-DD
+  date: string; // YYYY-MM-DD
   category: ExpenseCategory;
   description?: string; // item name/details, e.g. test name
   domain: ExpenseDomain;

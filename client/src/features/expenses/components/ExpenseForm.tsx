@@ -122,7 +122,9 @@ const ExpenseForm = ({
   return (
     <Card className="flex flex-col gap-5">
       <CardHeader>
-        <h3 className="font-bold text-lg">Add expense</h3>
+        <h3 className="font-bold text-lg">
+          {editingExpenseId ? 'Update' : 'Add'} expense
+        </h3>
       </CardHeader>
       <CardContent>
         <FormProvider {...form}>
@@ -132,7 +134,9 @@ const ExpenseForm = ({
           >
             <FieldGroup className="@container/field-group flex flex-row gap-6">
               <Field>
-                <FieldLabel htmlFor="date">Date</FieldLabel>
+                <FieldLabel htmlFor="date">
+                  Date <span className="text-destructive">*</span>
+                </FieldLabel>
                 <Controller
                   control={control}
                   name="date"
@@ -353,7 +357,7 @@ const ExpenseForm = ({
                   <FieldDescription>(optional)</FieldDescription>
                   <Input
                     id="receiptUrl"
-                    type="text"
+                    type="url"
                     placeholder="/uploads/receipt.jpg"
                     {...register('receiptUrl')}
                   />
@@ -368,7 +372,7 @@ const ExpenseForm = ({
                 type="button"
                 onClick={() => handleFormReset()}
               >
-                Clear
+                {editingExpenseId ? 'Cancel' : 'Clear'}
               </Button>
             </Field>
           </form>

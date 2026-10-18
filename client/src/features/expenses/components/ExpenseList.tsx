@@ -8,13 +8,30 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/components/ui/table';
-import type { Doctor, Expense, Prescription } from '@carecoin/shared-types';
-import { getPrescriptionLabelFromPrescId, getTotalOfExpenses } from '../helper';
+import type {
+  Doctor,
+  Expense,
+  Medicine,
+  Prescription,
+} from '@carecoin/shared-types';
+import {
+  getCategoryLabel,
+  getExpenseItemLabel,
+  getPrescriptionLabelFromPrescId,
+  getTotalOfExpenses,
+  sortExpenses,
+} from '../helper';
 import { formatCurrency } from '@/utils/format';
 import { Button } from '@/shared/components/ui/button';
+import { deleteExpense } from '@/shared/api/expense';
+import { DeleteConfirmationDialog } from '@/features/health/doctors/components/DeleteConfirmationDialog';
+import { Pencil } from 'lucide-react';
+import { useMemo } from 'react';
 
 type Props = {
   expenses: Expense[];
+  setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
+  medicines: Medicine[];
   prescriptions: Prescription[];
   doctors: Doctor[];
   setEditingExpenseId: React.Dispatch<React.SetStateAction<string | null>>;
@@ -22,6 +39,8 @@ type Props = {
 
 const ExpenseList = ({
   expenses,
+  setExpenses,
+  medicines,
   prescriptions,
   doctors,
   setEditingExpenseId,
@@ -29,6 +48,14 @@ const ExpenseList = ({
   const handleEditExpense = (expenseId: Expense['id']) => {
     setEditingExpenseId(expenseId);
   };
+
+  const handleDeleteExpense = async (expenseId: Expense['id']) => {
+    await deleteExpense(expenseId);
+
+    setExpenses((prev) => prev.filter((exp) => exp.id !== expenseId));
+  };
+
+  const sortedExpenses = useMemo(() => sortExpenses(expenses), [expenses]);
 
   return (
     <Card>
@@ -51,7 +78,7 @@ const ExpenseList = ({
             <TableRow className="bg-gray-200 border-gray-600 border-b">
               <TableHead className="w-[100px]">Date</TableHead>
               <TableHead>Category</TableHead>
-              <TableHead>Description</TableHead>
+              <TableHead>Item</TableHead>
               <TableHead>Prescription</TableHead>
               <TableHead className="text-right">Amount</TableHead>
               <TableHead>Receipt</TableHead>
@@ -59,43 +86,66 @@ const ExpenseList = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {expenses.map(
-              ({
+            {sortedExpenses.map((expense: Expense) => {
+              const {
                 id,
                 date,
                 category,
-                description,
                 linkedPrescriptionId,
                 amount,
                 receiptUrl,
-              }: Expense) => (
+              } = expense;
+              return (
                 <TableRow key={id}>
                   <TableCell className="font-medium">{date}</TableCell>
-                  <TableCell>{category}</TableCell>
-                  <TableCell>{description}</TableCell>
+                  <TableCell>{getCategoryLabel(category)}</TableCell>
                   <TableCell>
-                    {getPrescriptionLabelFromPrescId(
-                      linkedPrescriptionId,
-                      prescriptions,
-                      doctors,
-                    )}
+                    {getExpenseItemLabel(expense, medicines)}
+                  </TableCell>
+                  <TableCell>
+                    {linkedPrescriptionId
+                      ? getPrescriptionLabelFromPrescId(
+                          linkedPrescriptionId,
+                          prescriptions,
+                          doctors,
+                        )
+                      : '—'}
                   </TableCell>
                   <TableCell className="text-right">
                     {formatCurrency(amount)}
                   </TableCell>
-                  <TableCell>{receiptUrl}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell>
+                    {receiptUrl ? (
+                      <Button variant="link" className="px-0">
+                        <a
+                          href={receiptUrl}
+                          target="_blank"
+                          referrerPolicy="no-referrer"
+                        >
+                          View
+                        </a>
+                      </Button>
+                    ) : (
+                      '—'
+                    )}
+                  </TableCell>
+                  <TableCell className="flex justify-end gap-2">
                     <Button
-                      variant="link"
+                      variant="secondary"
                       onClick={() => handleEditExpense(id)}
                     >
-                      Edit
+                      <Pencil />
                     </Button>
-                    ·<Button variant="link">Delete</Button>
+                    <DeleteConfirmationDialog
+                      id={id}
+                      onConfirmDelete={handleDeleteExpense}
+                      title="Delete expense?"
+                      description="This will permanently delete this expense."
+                    />
                   </TableCell>
                 </TableRow>
-              ),
-            )}
+              );
+            })}
           </TableBody>
         </Table>
       </CardContent>

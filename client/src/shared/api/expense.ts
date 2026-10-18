@@ -68,7 +68,7 @@ export const updateExpense = async (
   }
 };
 
-export const deletePrescription = async (expenseId: Expense['id']) => {
+export const deleteExpense = async (expenseId: Expense['id']) => {
   try {
     const url = new URL(`${API_BASE_URL}/expenses/${expenseId}`);
 
@@ -87,7 +87,7 @@ export const deletePrescription = async (expenseId: Expense['id']) => {
   }
 };
 
-export async function fetchPrescriptionById(
+export async function fetchExpenseById(
   expenseId: Expense['id'],
 ): Promise<Expense> {
   const response = await fetch(`${API_BASE_URL}/expenses/${expenseId}`);

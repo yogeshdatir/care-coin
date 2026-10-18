@@ -76,6 +76,8 @@ const ExpensePage = () => {
       />
       <ExpenseList
         expenses={expenses}
+        setExpenses={setExpenses}
+        medicines={medicines}
         prescriptions={prescriptions}
         doctors={doctors}
         setEditingExpenseId={setEditingExpenseId}
