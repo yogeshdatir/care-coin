@@ -32,14 +32,18 @@ Infrastructure,Shared state (replacing per-page local state),Not started,Deferre
 Infrastructure,Creatable combobox component,Done,See creatable-combobox-guide.md for the reusable pattern
 Expense,Postgres table + seed data,Done,"NUMERIC(12,2) amount with a positive check; updated_at trigger; description column added with an ALTER for existing tables; seed is re-runnable (ON CONFLICT DO NOTHING)"
 Expense,Shared types and fixed category list,Done,"Expense, payload types, EXPENSE_DOMAINS and EXPENSE_CATEGORIES (value/label) in index.ts"
-Expense,Create,In progress,"Backend drafted and tested against a Postgres engine; copy into server/ and verify in the repo. Validates amount > 0, real date, category from the fixed list and description up to 200 characters"
-Expense,Read (list),In progress,{ data: [...] } newest first with optional domain filter. Returns ids only until derived names are added
-Expense,Read (detail),In progress,
-Expense,Update,In progress,PUT full replace; optional fields not sent are cleared
-Expense,Delete,In progress,Hard delete; nothing references expenses
-Expense,Derived names in read responses,Not started,"medicineName, variantLabel, doctor name and prescription date via joins; read-only fields omitted from payloads"
-Expense,Medicine-variant validation rule,Not started,Variant required when category = medicines and rejected for other categories
-Expense,UI: add/update form + list,Not started,"Wireframe agreed: form on top, list below; medicine and variant selects only for Medicines; Description field; Item column"
+Expense,Create,Done,"POST returns 201. Validates amount > 0, a real date (ISO or locale string, stored as YYYY-MM-DD), category from the fixed list and description up to 200 characters"
+Expense,Read (list),Done,{ data: [...] } newest first with optional domain filter. Returns ids only; the UI looks up names client-side (getExpenseItemLabel)
+Expense,Read (detail),Not started,
+Expense,Update,Done,PUT full replace; optional fields not sent are cleared. Same validation and date handling as create
+Expense,Delete,Done,Hard delete; nothing references expenses
+Expense,Date handling (ISO and locale strings),Done,normalizeDate in expenses.date.ts; numeric dates are read day-first (en-IN); impossible dates rejected with 400
+Expense,Derived names in read responses,Not started,"Optional now: the UI resolves medicine and variant names from the medicines list. Do this only if the list should stop depending on it (medicineName, variantLabel, doctor name, prescription date via joins)"
+Expense,Medicine-variant validation rule,Not started,Decided: variant is always required for category = medicines (created inline in the UI if the medicine has none) and rejected for other categories. Enforced in the form only; add to the controller
+Expense,UI: add/update form + list,Done,"Form on top, list below; edit loads the row into the form; medicine and variant selects only for Medicines (variant disabled until a medicine is chosen, helper text shown); Description field; Item column"
+Expense,UI: form-values layer + mappers,Done,"ExpenseFormValues (strings, UI-only medicineId) with toExpensePayload and toExpenseFormValues; 9 Vitest tests"
+Expense,"UI: list helpers (item label, prescription label, sorting)",Done,"getExpenseItemLabel (medicine + variant, else description, else category), getPrescriptionLabel (date · doctor), sortExpenses (newest first; new expense goes to the top); formatCurrency and formatDate (en-IN)"
+Expense,Clean up development data,Not started,"Rows with category = medicines and no variant, or a stale variant on other categories; query is in the chat history"
 Expense,UI: add another item from the same receipt,Not started,"Optional convenience: keeps date, receipt and prescription"
 Expense,Tests (Jest + supertest),Not started,Service and route tests
 Expense,v2: user-created categories (ExpenseCategory table),Not started,Seven v1 slugs become the first rows; Expense.category becomes a foreign key

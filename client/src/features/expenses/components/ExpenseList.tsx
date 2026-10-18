@@ -2,7 +2,6 @@ import { Card, CardContent, CardHeader } from '@/shared/components/ui/card';
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
