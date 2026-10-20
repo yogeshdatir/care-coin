@@ -7,6 +7,7 @@ import {
   FieldLabel,
 } from '@/shared/components/ui/field';
 import { Input } from '@/shared/components/ui/input';
+import CurrencyInput from 'react-currency-input-field';
 import {
   Select,
   SelectContent,
@@ -48,6 +49,7 @@ import {
 import { createExpense, updateExpense } from '@/shared/api/expense';
 import { createMedicine } from '@/shared/api/medicines';
 import { useCallback, useEffect, useMemo } from 'react';
+import type { Flash } from '../useHighlight';
 
 type Props = {
   expenses: Expense[];
@@ -62,6 +64,7 @@ type Props = {
   >;
   duplicateSource: Expense | null;
   setDuplicateSource: React.Dispatch<React.SetStateAction<Expense | null>>;
+  flash: Flash;
 };
 
 const ExpenseForm = ({
@@ -75,6 +78,7 @@ const ExpenseForm = ({
   setEditingExpenseId,
   duplicateSource,
   setDuplicateSource,
+  flash,
 }: Props) => {
   const form = useForm<ExpenseFormValues>({
     defaultValues: EMPTY_EXPENSE_FORM,
@@ -127,9 +131,11 @@ const ExpenseForm = ({
         else return expense;
       });
       setExpenses(updatedExpenses);
+      flash(editingExpenseId, 'updated');
     } else {
       response = await createExpense(expensePayload);
       setExpenses((prev) => [...prev, response]);
+      flash(response.id, 'added');
     }
 
     if (addAnother) {
@@ -227,19 +233,30 @@ const ExpenseForm = ({
               />
               <Field>
                 <FieldLabel htmlFor="amount">
-                  Amount (₹)
-                  <span className="text-destructive">*</span>
+                  Amount <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Controller
                   control={control}
                   name="amount"
-                  rules={{ required: 'Please add an amount...' }}
+                  rules={{
+                    required: 'Please add an amount...',
+                    validate: (value) =>
+                      Number(value) > 0 || 'Amount must be greater than 0',
+                  }}
                   render={({ field, fieldState }) => (
-                    <Input
-                      {...field}
+                    <CurrencyInput
+                      customInput={Input}
                       id="amount"
-                      type="number"
-                      placeholder="0.00"
+                      ref={field.ref}
+                      name={field.name}
+                      value={field.value}
+                      onBlur={field.onBlur}
+                      onValueChange={(value) => field.onChange(value ?? '')}
+                      intlConfig={{ locale: 'en-IN', currency: 'INR' }}
+                      decimalsLimit={2}
+                      decimalScale={2}
+                      allowNegativeValue={false}
+                      placeholder="₹0.00"
                       aria-invalid={fieldState.invalid}
                     />
                   )}
@@ -410,7 +427,12 @@ const ExpenseForm = ({
                 Save expense
               </Button>
               {!editingExpenseId && (
-                <Button className="w-max" type="submit" value="add-another">
+                <Button
+                  className="w-max"
+                  variant="outline"
+                  type="submit"
+                  value="add-another"
+                >
                   Save & add another expense
                 </Button>
               )}

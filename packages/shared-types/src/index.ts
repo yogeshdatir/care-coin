@@ -148,8 +148,8 @@ export interface Expense {
   linkedPrescriptionId?: string;
   linkedMedicineVariantId?: string;
   receiptUrl?: string;
+  createdAt: string; // ISO timestamp, set by the server (read-only)
 }
 
-export type CreateExpenseRequestPayload = Omit<Expense, 'id'>;
-
-export type UpdateExpenseRequestPayload = Omit<Expense, 'id'>;
+export type CreateExpenseRequestPayload = Omit<Expense, 'id' | 'createdAt'>;
+export type UpdateExpenseRequestPayload = Omit<Expense, 'id' | 'createdAt'>;

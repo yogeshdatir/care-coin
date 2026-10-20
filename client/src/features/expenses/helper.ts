@@ -161,7 +161,12 @@ export const getExpenseItemLabel = (
 
 /** Newest first. Equal dates keep their existing order (Array.sort is stable). */
 export const sortExpenses = (expenses: readonly Expense[]): Expense[] =>
-  [...expenses].sort((a, b) => b.date.localeCompare(a.date));
+  [...expenses].sort(
+    (a, b) =>
+      b.date.localeCompare(a.date) ||
+      b.createdAt.localeCompare(a.createdAt) ||
+      b.id.localeCompare(a.id),
+  );
 
 /** The variant to pre-select: only when exactly one active variant exists. */
 export const getDefaultVariantId = (medicine: Medicine): string => {

@@ -18,7 +18,8 @@ const notFound = () => httpError(404, 'Expense not found');
 // to_char keeps DATE as 'YYYY-MM-DD' (pg would return a timezone-shifted JS Date)
 const COLUMNS = `
   id, amount, to_char(date, 'YYYY-MM-DD') AS date, category, domain,
-  linked_prescription_id, linked_medicine_variant_id, receipt_url, description`;
+  linked_prescription_id, linked_medicine_variant_id, receipt_url, description,
+  created_at`;
 
 function mapRowToExpense(row: any): Expense {
   return {
@@ -31,6 +32,7 @@ function mapRowToExpense(row: any): Expense {
     linkedMedicineVariantId: row.linked_medicine_variant_id ?? undefined,
     receiptUrl: row.receipt_url ?? undefined,
     description: row.description ?? undefined,
+    createdAt: row.created_at.toISOString(), // pg returns a JS Date
   };
 }
 
@@ -71,7 +73,7 @@ export async function getAllExpenses(
   const result = await pool.query(
     `SELECT ${COLUMNS} FROM expenses
      WHERE ($1::text IS NULL OR domain = $1)
-     ORDER BY date DESC, created_at DESC`,
+     ORDER BY date DESC, created_at DESC, id DESC`,
     [domain ?? null],
   );
   return result.rows.map(mapRowToExpense);

@@ -11,6 +11,7 @@ import ExpenseForm from './ExpenseForm';
 import { fetchDoctors } from '@/shared/api/doctor';
 import { fetchPrescriptions } from '@/shared/api/prescription';
 import { fetchMedicines } from '@/shared/api/medicines';
+import { useHighlight } from '../useHighlight.ts';
 
 const ExpensePage = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -67,6 +68,8 @@ const ExpensePage = () => {
     };
   }, []);
 
+  const { highlight, flash } = useHighlight();
+
   return (
     <div className="flex flex-col gap-6">
       <h1 className="font-extrabold text-xl">Expenses</h1>
@@ -81,6 +84,7 @@ const ExpensePage = () => {
         setEditingExpenseId={setEditingExpenseId}
         duplicateSource={duplicateSource}
         setDuplicateSource={setDuplicateSource}
+        flash={flash}
       />
       <ExpenseList
         expenses={expenses}
@@ -90,6 +94,7 @@ const ExpensePage = () => {
         doctors={doctors}
         setEditingExpenseId={setEditingExpenseId}
         handleDuplicate={handleDuplicate}
+        highlight={highlight}
       />
     </div>
   );
