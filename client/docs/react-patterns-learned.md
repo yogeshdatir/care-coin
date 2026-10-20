@@ -9,6 +9,12 @@ Reusable UI/architecture patterns discovered while building real features — ke
 3. [`interface` vs `type` — when to use which](#pattern-interface-vs-type--when-to-use-which)
 4. [shadcn Field hierarchy](#pattern-shadcn-field-hierarchy)
 5. [Don't reset form state via a useEffect watching an id](#pattern-dont-reset-form-state-via-a-useeffect-watching-an-id)
+6. [Separate form values from the API payload](#pattern-separate-form-values-from-the-api-payload)
+7. [Dependent fields](#pattern-dependent-fields)
+8. [react-hook-form gotchas](#pattern-react-hook-form-gotchas)
+9. [One form, two submit actions](#pattern-one-form-two-submit-actions)
+10. [A transient highlight for the row just saved](#pattern-a-transient-highlight-for-the-row-just-saved)
+11. [Suggestions from data you already have](#pattern-suggestions-from-data-you-already-have)
 
 ---
 
@@ -75,6 +81,19 @@ MEDICINE_FORMS.map(f => <SelectItem value={f}>{f}</SelectItem>)
 ```
 
 **Where else this applies**: any fixed set of string literals used both as dropdown/select options and as a type — status enums, category lists, role names, etc.
+
+**Variant: options with labels**: when each value also needs a display label, declare `{ value, label }` items with `as const satisfies readonly OptionItem[]` and derive the type from the values.
+
+```ts
+export const EXPENSE_CATEGORIES = [
+  { value: 'consultation', label: 'Consultation' },
+  { value: 'medicines', label: 'Medicines' },
+] as const satisfies readonly OptionItem[];
+
+export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number]['value'];
+```
+
+A `: OptionItem[]` annotation instead of `satisfies` widens `value` to `string`, and the derived union collapses to `string`.
 
 ---
 
@@ -166,3 +185,138 @@ useEffect(() => {
 ```
 
 **The distinguishing question**: _do I control the event that caused this change?_ If yes (a click handler in your own component) → move the state update into that handler, don't use an effect. If no (a prop changed for reasons outside this component's knowledge) → an effect syncing to that prop is appropriate.
+
+---
+
+## Pattern: separate form values from the API payload
+
+**Problem**: Inputs need strings and sometimes UI-only fields (a medicine select that only filters the variant list), but the API wants numbers, absent optional fields and no UI-only data. Using the API type as the form type forces casts, and `reset(apiObject)` breaks on the mismatch.
+
+**Solution**: two types and two small pure mappers.
+
+```ts
+interface ExpenseFormValues {
+  amount: string; // inputs hold strings
+  medicineId: string; // UI-only: filters variants, never sent
+  linkedMedicineVariantId: string; // '' = not set
+  // ...
+}
+
+// explicit field list, so a UI-only field cannot leak into the request
+const toExpensePayload = (
+  v: ExpenseFormValues,
+): CreateExpenseRequestPayload => ({
+  /* ... */
+});
+
+// derives the UI-only field from saved data (medicine from the variant)
+const toExpenseFormValues = (
+  e: Expense,
+  medicines: Medicine[],
+): ExpenseFormValues => ({
+  /* ... */
+});
+```
+
+| Rule                                                                                 | Why                                                                           |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| Never `reset()` with an API object                                                   | Types differ (`number` vs `string`, optional vs `''`), and it is a type error |
+| `''` means "unset" in the form; the mapper turns it into `undefined`                 | Inputs stay controlled                                                        |
+| Drop dependent values in the mapper (a variant when the category is not `medicines`) | A stale value cannot be sent after the user changes a parent field            |
+| Keep the mappers pure and unit-test them                                             | Plain Vitest, no DOM                                                          |
+
+**Where else this applies**: any form whose editing shape differs from its stored shape (numbers and dates as strings, a parent select that only narrows a child).
+
+---
+
+## Pattern: dependent fields
+
+**Problem**: A child field (variant) depends on a parent (medicine). Hiding it until the parent is set makes the layout jump; leaving it live allows invalid combinations.
+
+| Decision        | Detail                                                                                                                                                               |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Visibility      | Keep it visible but **disabled** until the parent has a value                                                                                                        |
+| Hint            | Helper text (`FieldDescription`) that changes with state ("Select or create a medicine first"), not a tooltip: disabled controls do not fire hover or focus          |
+| Parent changes  | Clear **only the child**: `field.onChange(parent); setValue('child', '')`. Calling `setValue` on the field you just set blanks it                                    |
+| One option only | Auto-select it, using a pure helper that counts active options (`getDefaultVariantId(medicine)`)                                                                     |
+| Required        | If a missing child loses information, make it required unconditionally and let the user create the first option inline, rather than "required only if options exist" |
+| Disabling       | Pass `disabled` to the child component, **not** to `<Controller disabled>` (see the gotchas below)                                                                   |
+
+---
+
+## Pattern: react-hook-form gotchas
+
+| Symptom                                                               | Cause                                                                                | Fix                                                                                                                                     |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `Cannot read properties of null (reading '_names')`                   | `Controller` outside a `FormProvider` with no `control` (`useFormContext()` is null) | Pass `control={control}`, or wrap in `FormProvider`                                                                                     |
+| A field blanks right after the user picks a value                     | `setValue` on the same field after `field.onChange`                                  | Clear the dependent field instead                                                                                                       |
+| A disabled field's value is `undefined` and its validation is skipped | `disabled` on `<Controller>`                                                         | Pass `disabled` to the component                                                                                                        |
+| `setFocus` does nothing, with no error                                | The ref never reaches a DOM input (custom `Input`, `customInput`)                    | Forward `field.ref` (`ref`, or `getInputRef` for some libraries). After `reset`, defer: `requestAnimationFrame(() => setFocus('name'))` |
+| A third-party input breaks when you spread `{...field}`               | Its `onChange` is `(value, ...)`, not an event                                       | Wire props by hand: `onChange={(v) => field.onChange(v ?? '')}`. Keep the form value a plain string                                     |
+| A value set by `reset` does not show in a combobox                    | It keeps its own display text                                                        | Remount with `key`, or sync with an effect (see the creatable combobox)                                                                 |
+| A value used for rendering is stale                                   | `getValues()` does not re-render                                                     | Use `useWatch`                                                                                                                          |
+
+---
+
+## Pattern: one form, two submit actions
+
+**Problem**: "Save" and "Save & add another" should share validation and the same `onSubmit`, and Enter should still work.
+
+**Solution**: both buttons are `type="submit"`; the second carries `name="intent" value="add-another"`. The handler reads which button was pressed.
+
+```tsx
+const handleSave: SubmitHandler<Values> = async (data, event) => {
+  const submitter = (event?.nativeEvent as SubmitEvent | undefined)
+    ?.submitter as HTMLButtonElement | null;
+  await save(data);
+  if (submitter?.value === 'add-another') {
+    reset(toAddAnotherValues(data)); // pure helper: lists the carried-over fields
+    requestAnimationFrame(() => setFocus('amount'));
+  } else {
+    reset(EMPTY);
+  }
+};
+```
+
+- Put plain Save **first**: Enter submits using the first submit button, so it takes the plain path.
+- `handleSubmit(fn)` passes the event as the second argument, and `nativeEvent.submitter` is supported in current browsers (Safari 15.4+).
+- Hide "add another" while editing; disable both buttons while `isSubmitting` to prevent double creates.
+- If `save` throws, nothing resets, so the user's input survives.
+
+---
+
+## Pattern: a transient highlight for the row just saved
+
+**Problem**: After adding or editing, sorting can move the row out of sight, and the list is often below the fold.
+
+**Solution**: a small hook that flashes an id, and a presentational row prop.
+
+```ts
+const { highlight, flash } = useHighlight(4000); // { id, kind: 'added' | 'updated' } | null
+// after a save: flash(saved.id, 'added')
+// row: <TableRow className={cn('duration-700', kind && 'bg-primary/10')}> + <Badge>New</Badge>
+```
+
+- The hook clears its timer when it flashes again and on unmount. Test it with fake timers.
+- Use a badge as well as colour. Do not scroll to the row, because rapid-entry flows should stay at the form; show an inline confirmation near the buttons (`role="status"`) instead.
+
+---
+
+## Pattern: suggestions from data you already have
+
+**Problem**: Free-text fields (a test or item name) get retyped repeatedly.
+
+**Solution**: a native `<datalist>` fed by a pure helper over the already-loaded records.
+
+```tsx
+<Input list="description-suggestions" maxLength={200} {...register('description')} />
+<datalist id="description-suggestions">
+  {suggestions.map((s) => <option key={s} value={s} />)}
+</datalist>
+```
+
+- The helper counts case-insensitively, filters by the current category, sorts by frequency and takes the top N (`getDescriptionSuggestions(expenses, category)`).
+- No new API, but it only sees loaded rows and cannot be styled. Upgrade to a combobox only if you need styling.
+- Use `maxLength` for text inputs: `max` does nothing on `type="text"`.
+
+---

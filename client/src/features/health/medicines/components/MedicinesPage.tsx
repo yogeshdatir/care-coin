@@ -39,7 +39,7 @@ import {
   useForm,
   type SubmitHandler,
 } from 'react-hook-form';
-import { DeleteConfirmationDialog } from '../../doctors/components/DeleteConfirmationDialog';
+import { DeleteConfirmationDialog } from '../../../../shared/components/DeleteConfirmationDialog';
 import { Badge } from '@/shared/components/ui/badge';
 
 type MedicineVariantFormValues = Omit<

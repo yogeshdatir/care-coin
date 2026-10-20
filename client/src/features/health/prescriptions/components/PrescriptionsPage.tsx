@@ -42,7 +42,7 @@ import type {
   Prescription,
 } from '@carecoin/shared-types';
 import { Pencil } from 'lucide-react';
-import { DeleteConfirmationDialog } from '../../doctors/components/DeleteConfirmationDialog';
+import { DeleteConfirmationDialog } from '../../../../shared/components/DeleteConfirmationDialog';
 
 const INITIAL_MEDICINE = {
   medicineId: '',

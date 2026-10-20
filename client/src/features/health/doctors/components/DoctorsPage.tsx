@@ -21,7 +21,7 @@ import type {
 } from '@carecoin/shared-types';
 import { useEffect, useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
-import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { DeleteConfirmationDialog } from '../../../../shared/components/DeleteConfirmationDialog';
 import { ArchiveRestore, Pencil } from 'lucide-react';
 import { Badge } from '@/shared/components/ui/badge';
 

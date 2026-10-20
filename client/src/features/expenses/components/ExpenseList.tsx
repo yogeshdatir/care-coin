@@ -25,7 +25,7 @@ import { formatCurrency } from '@/utils/format';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/components/ui/button';
 import { deleteExpense } from '@/shared/api/expense';
-import { DeleteConfirmationDialog } from '@/features/health/doctors/components/DeleteConfirmationDialog';
+import { DeleteConfirmationDialog } from '@/shared/components/DeleteConfirmationDialog';
 import { BookCopy, Pencil } from 'lucide-react';
 import { useMemo } from 'react';
 import type { Highlight } from '../useHighlight';
