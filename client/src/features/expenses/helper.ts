@@ -27,7 +27,7 @@ export interface ExpenseFormValues {
 }
 
 export const EMPTY_EXPENSE_FORM: ExpenseFormValues = {
-  date: undefined,
+  date: new Date(),
   category: '',
   amount: '',
   description: '',
@@ -162,3 +162,52 @@ export const getExpenseItemLabel = (
 /** Newest first. Equal dates keep their existing order (Array.sort is stable). */
 export const sortExpenses = (expenses: readonly Expense[]): Expense[] =>
   [...expenses].sort((a, b) => b.date.localeCompare(a.date));
+
+/** The variant to pre-select: only when exactly one active variant exists. */
+export const getDefaultVariantId = (medicine: Medicine): string => {
+  const active = medicine.variants?.filter((v) => v.isActive) ?? [];
+  return active.length === 1 ? active[0].id : '';
+};
+
+export const toAddAnotherValues = (
+  values: ExpenseFormValues,
+): ExpenseFormValues => ({
+  ...EMPTY_EXPENSE_FORM,
+  date: values.date,
+  category: values.category,
+  linkedPrescriptionId: values.linkedPrescriptionId,
+  receiptUrl: values.receiptUrl,
+});
+
+/** A past expense as a fresh draft: today's date, no receipt (it's a new purchase). */
+export const toDuplicateValues = (
+  expense: Expense,
+  medicines: Medicine[],
+): ExpenseFormValues => ({
+  ...toExpenseFormValues(expense, medicines),
+  date: new Date(),
+  receiptUrl: '',
+});
+
+/** Past descriptions for a category, most used first, case-insensitive duplicates merged. */
+export const getDescriptionSuggestions = (
+  expenses: readonly Expense[],
+  category: ExpenseCategory | '',
+  limit = 10,
+): string[] => {
+  const counts = new Map<string, { text: string; count: number }>();
+
+  for (const expense of expenses) {
+    const text = expense.description?.trim();
+    if (!text || (category && expense.category !== category)) continue;
+    const key = text.toLowerCase();
+    const entry = counts.get(key);
+    if (entry) entry.count += 1;
+    else counts.set(key, { text, count: 1 });
+  }
+
+  return [...counts.values()]
+    .sort((a, b) => b.count - a.count || a.text.localeCompare(b.text))
+    .slice(0, limit)
+    .map((entry) => entry.text);
+};

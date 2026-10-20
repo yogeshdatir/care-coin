@@ -40,10 +40,14 @@ import {
   toExpensePayload,
   type ExpenseFormValues,
   toExpenseFormValues,
+  getDefaultVariantId,
+  toAddAnotherValues,
+  toDuplicateValues,
+  getDescriptionSuggestions,
 } from '../helper';
 import { createExpense, updateExpense } from '@/shared/api/expense';
 import { createMedicine } from '@/shared/api/medicines';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 type Props = {
   expenses: Expense[];
@@ -56,6 +60,8 @@ type Props = {
   setEditingExpenseId: React.Dispatch<
     React.SetStateAction<Expense['id'] | null>
   >;
+  duplicateSource: Expense | null;
+  setDuplicateSource: React.Dispatch<React.SetStateAction<Expense | null>>;
 };
 
 const ExpenseForm = ({
@@ -67,12 +73,14 @@ const ExpenseForm = ({
   doctors,
   editingExpenseId,
   setEditingExpenseId,
+  duplicateSource,
+  setDuplicateSource,
 }: Props) => {
   const form = useForm<ExpenseFormValues>({
     defaultValues: EMPTY_EXPENSE_FORM,
   });
 
-  const { register, handleSubmit, reset, control, setValue } = form;
+  const { register, handleSubmit, reset, control, setValue, setFocus } = form;
 
   useEffect(() => {
     const editingExpense = expenses.find((e) => e.id === editingExpenseId);
@@ -82,6 +90,13 @@ const ExpenseForm = ({
       reset(values);
     }
   }, [editingExpenseId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!duplicateSource) return;
+    reset(toDuplicateValues(duplicateSource, medicines));
+    setDuplicateSource(null); // so duplicating the same row again works
+    requestAnimationFrame(() => setFocus('amount'));
+  }, [duplicateSource]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const category = useWatch({
     control,
@@ -94,9 +109,15 @@ const ExpenseForm = ({
     return newMedicine;
   };
 
-  const handleNewExpense: SubmitHandler<ExpenseFormValues> = async (data) => {
+  const handleNewExpense: SubmitHandler<ExpenseFormValues> = async (
+    data,
+    event,
+  ) => {
+    const submitter = (event?.nativeEvent as SubmitEvent | undefined)
+      ?.submitter as HTMLButtonElement | null;
+    const addAnother = submitter?.value === 'add-another';
+
     const expensePayload = toExpensePayload(data);
-    console.log({ data, expensePayload });
 
     let response: Expense;
     if (editingExpenseId) {
@@ -111,13 +132,24 @@ const ExpenseForm = ({
       setExpenses((prev) => [...prev, response]);
     }
 
-    handleFormReset();
+    if (addAnother) {
+      reset(toAddAnotherValues(data));
+      requestAnimationFrame(() => setFocus('amount'));
+    } else {
+      handleFormReset();
+      requestAnimationFrame(() => setFocus('category'));
+    }
   };
 
   const handleFormReset = useCallback(() => {
     reset(EMPTY_EXPENSE_FORM);
     setEditingExpenseId(null);
   }, [reset, setEditingExpenseId]);
+
+  const suggestions = useMemo(
+    () => getDescriptionSuggestions(expenses, category),
+    [expenses, category],
+  );
 
   return (
     <Card className="flex flex-col gap-5">
@@ -169,6 +201,7 @@ const ExpenseForm = ({
                       onValueChange={field.onChange}
                     >
                       <SelectTrigger
+                        ref={field.ref}
                         id="select-category"
                         aria-invalid={fieldState.invalid}
                         className="flex-1"
@@ -203,11 +236,10 @@ const ExpenseForm = ({
                   rules={{ required: 'Please add an amount...' }}
                   render={({ field, fieldState }) => (
                     <Input
+                      {...field}
                       id="amount"
                       type="number"
                       placeholder="0.00"
-                      value={field.value}
-                      onChange={field.onChange}
                       aria-invalid={fieldState.invalid}
                     />
                   )}
@@ -229,7 +261,10 @@ const ExpenseForm = ({
                       if (selectedMedicine.id === field.value) return;
 
                       field.onChange(selectedMedicine.id);
-                      setValue(`linkedMedicineVariantId`, '');
+                      setValue(
+                        'linkedMedicineVariantId',
+                        getDefaultVariantId(selectedMedicine),
+                      );
                     };
 
                     return (
@@ -248,7 +283,7 @@ const ExpenseForm = ({
                             value={field.value}
                             onChange={handleMedicineSelect}
                             onCreate={handleCreateMedicine}
-                            placeholder="Select a medicine"
+                            placeholder="Select or create medicine"
                             isOptionDisabled={(option) => !option.isActive}
                             ariaInvalid={fieldState.invalid}
                           />
@@ -294,7 +329,7 @@ const ExpenseForm = ({
             )}
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="amount">Description</FieldLabel>
+                <FieldLabel htmlFor="description">Description</FieldLabel>
                 <FieldDescription>
                   (optional, max 200 characters)
                 </FieldDescription>
@@ -302,9 +337,15 @@ const ExpenseForm = ({
                   id="description"
                   type="text"
                   max={200}
+                  list="description-suggestions"
                   placeholder="e.g. HbA1c + lipid profile, MRI knee"
                   {...register('description')}
                 />
+                <datalist id="description-suggestions">
+                  {suggestions.map((text) => (
+                    <option key={text} value={text} />
+                  ))}
+                </datalist>
               </Field>
               <div className="@container/field-group flex flex-row gap-6">
                 <Controller
@@ -365,7 +406,14 @@ const ExpenseForm = ({
               </div>
             </FieldGroup>
             <Field orientation="horizontal">
-              <Button className="w-max">Save expense</Button>
+              <Button className="w-max" type="submit">
+                Save expense
+              </Button>
+              {!editingExpenseId && (
+                <Button className="w-max" type="submit" value="add-another">
+                  Save & add another expense
+                </Button>
+              )}
               <Button
                 className="w-max"
                 variant="outline"

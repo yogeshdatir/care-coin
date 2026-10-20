@@ -20,6 +20,12 @@ const ExpensePage = () => {
   const [editingExpenseId, setEditingExpenseId] = useState<
     Expense['id'] | null
   >(null);
+  const [duplicateSource, setDuplicateSource] = useState<Expense | null>(null);
+
+  const handleDuplicate = (expense: Expense) => {
+    setEditingExpenseId(null); // leave edit mode: this is a new expense
+    setDuplicateSource(expense);
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -73,6 +79,8 @@ const ExpensePage = () => {
         doctors={doctors}
         editingExpenseId={editingExpenseId}
         setEditingExpenseId={setEditingExpenseId}
+        duplicateSource={duplicateSource}
+        setDuplicateSource={setDuplicateSource}
       />
       <ExpenseList
         expenses={expenses}
@@ -81,6 +89,7 @@ const ExpensePage = () => {
         prescriptions={prescriptions}
         doctors={doctors}
         setEditingExpenseId={setEditingExpenseId}
+        handleDuplicate={handleDuplicate}
       />
     </div>
   );

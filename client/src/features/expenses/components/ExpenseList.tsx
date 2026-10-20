@@ -24,7 +24,7 @@ import { formatCurrency } from '@/utils/format';
 import { Button } from '@/shared/components/ui/button';
 import { deleteExpense } from '@/shared/api/expense';
 import { DeleteConfirmationDialog } from '@/features/health/doctors/components/DeleteConfirmationDialog';
-import { Pencil } from 'lucide-react';
+import { BookCopy, Pencil } from 'lucide-react';
 import { useMemo } from 'react';
 
 type Props = {
@@ -34,6 +34,7 @@ type Props = {
   prescriptions: Prescription[];
   doctors: Doctor[];
   setEditingExpenseId: React.Dispatch<React.SetStateAction<string | null>>;
+  handleDuplicate: (expense: Expense) => void;
 };
 
 const ExpenseList = ({
@@ -43,6 +44,7 @@ const ExpenseList = ({
   prescriptions,
   doctors,
   setEditingExpenseId,
+  handleDuplicate,
 }: Props) => {
   const handleEditExpense = (expenseId: Expense['id']) => {
     setEditingExpenseId(expenseId);
@@ -131,6 +133,7 @@ const ExpenseList = ({
                     <Button
                       variant="secondary"
                       onClick={() => handleEditExpense(id)}
+                      title="Edit expense"
                     >
                       <Pencil />
                     </Button>
@@ -139,7 +142,18 @@ const ExpenseList = ({
                       onConfirmDelete={handleDeleteExpense}
                       title="Delete expense?"
                       description="This will permanently delete this expense."
+                      buttonTitle="Delete expense"
                     />
+                    <Button
+                      variant="secondary"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDuplicate(expense);
+                      }}
+                      title="Clone expense"
+                    >
+                      <BookCopy />
+                    </Button>
                   </TableCell>
                 </TableRow>
               );

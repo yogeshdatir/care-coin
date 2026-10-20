@@ -19,6 +19,7 @@ interface Props {
   onConfirmDelete: (id: string) => Promise<void>;
   title: string;
   description: string;
+  buttonTitle?: string;
 }
 
 export function DeleteConfirmationDialog({
@@ -26,6 +27,7 @@ export function DeleteConfirmationDialog({
   onConfirmDelete,
   title,
   description,
+  buttonTitle = 'Delete',
 }: Props) {
   const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -48,7 +50,11 @@ export function DeleteConfirmationDialog({
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive" className="cursor-pointer">
+        <Button
+          title={buttonTitle}
+          variant="destructive"
+          className="cursor-pointer"
+        >
           <Trash2Icon />
         </Button>
       </AlertDialogTrigger>
