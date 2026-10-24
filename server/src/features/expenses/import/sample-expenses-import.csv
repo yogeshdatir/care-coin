@@ -1,0 +1,10 @@
+Date,Category,Amount,Description,Medicine,Form,Strength,Receipt URL
+2026-10-01,Consultation,600,General checkup,,,,
+02/10/2026,Lab tests,"1,850.50",HbA1c + lipid profile,,,,https://example.com/receipts/lab-1.jpg
+2026-10-02,Medicines,185.50,,Metformin,tablet,500mg,https://example.com/receipts/pharmacy-1.jpg
+2026-10-02,Medicines,96.00,,Pantoprazole,,40mg,https://example.com/receipts/pharmacy-1.jpg
+2026-10-02,Medicines,142.25,,Amoxicillin,Liquid / Syrup,125mg/5ml,https://example.com/receipts/pharmacy-1.jpg
+2026-10-15,Medicines,185.50,Refill,metformin,Tablet,500MG,
+2026-10-16,Medicines,215.00,,Volini,topical,,
+2026-10-18,Imaging (X-ray / Scan),1200,Lumbar spine X-ray,,,,
+2026-10-20,therapy,800,Physiotherapy session,,,,

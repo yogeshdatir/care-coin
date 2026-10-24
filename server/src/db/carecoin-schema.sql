@@ -117,8 +117,11 @@ CREATE TABLE IF NOT EXISTS expenses (
 );
 
 -- description: free-text item name/details (e.g. test name). Capped at 200 chars by the API.
+-- source: where the row came from ('manual' | 'import'). Server-owned, never sent by clients.
+-- Allowed values (EXPENSE_SOURCES) live only in shared-types, like domain and form.
 ALTER TABLE expenses
-  ADD COLUMN IF NOT EXISTS description TEXT;
+  ADD COLUMN IF NOT EXISTS description TEXT,
+  ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'manual';
 
 CREATE INDEX IF NOT EXISTS idx_expenses_prescriptions_id ON expenses(linked_prescription_id);
 CREATE INDEX IF NOT EXISTS idx_expenses_medicine_variants_id ON expenses(linked_medicine_variant_id);
@@ -168,3 +171,35 @@ DROP TRIGGER IF EXISTS trg_expenses_updated_at ON expenses;
 CREATE TRIGGER trg_expenses_updated_at
   BEFORE UPDATE ON expenses
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ============================================================
+-- DEV ONLY: wipe all data (keeps tables, indexes, triggers)
+-- Commented out on purpose: this file is meant to be re-run safely,
+-- and an active TRUNCATE would delete everything on every run.
+-- To use: select the block below, uncomment it, and run it by itself.
+-- NEVER run against a database holding real data you want to keep.
+-- ============================================================
+-- TRUNCATE TABLE
+--   expenses,
+--   prescription_medicines,
+--   prescriptions,
+--   medicine_variants,
+--   medicines,
+--   doctors
+-- RESTART IDENTITY CASCADE;
+--
+-- Notes:
+--   * One statement lists every table, so Postgres handles the foreign keys
+--     (expenses -> prescriptions/medicine_variants, prescriptions -> doctors, etc.).
+--     CASCADE also empties any table added later that references these.
+--   * RESTART IDENTITY is harmless here (ids are UUIDs, not sequences) but keeps
+--     the statement correct if a serial column is ever added.
+--   * To re-seed afterwards, run seed.sql.
+--
+-- Only want to clear expenses (e.g. to re-test the CSV import)?
+--   TRUNCATE TABLE expenses;
+--
+-- Only want to remove imported expenses, keeping manual ones?
+--   DELETE FROM expenses WHERE source = 'import';
+-- Medicines/variants created by an import are not removed by that; delete them
+-- by hand if needed.
