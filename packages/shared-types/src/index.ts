@@ -138,6 +138,9 @@ export const EXPENSE_CATEGORIES = [
 
 export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number]['value'];
 
+export const EXPENSE_SOURCES = ['manual', 'import'] as const;
+export type ExpenseSource = (typeof EXPENSE_SOURCES)[number];
+
 export interface Expense {
   id: string;
   amount: number;
@@ -149,7 +152,14 @@ export interface Expense {
   linkedMedicineVariantId?: string;
   receiptUrl?: string;
   createdAt: string; // ISO timestamp, set by the server (read-only)
+  source: ExpenseSource; // server-owned: 'manual' by default, 'import' from CSV
 }
 
-export type CreateExpenseRequestPayload = Omit<Expense, 'id' | 'createdAt'>;
-export type UpdateExpenseRequestPayload = Omit<Expense, 'id' | 'createdAt'>;
+export type CreateExpenseRequestPayload = Omit<
+  Expense,
+  'id' | 'createdAt' | 'source'
+>;
+export type UpdateExpenseRequestPayload = Omit<
+  Expense,
+  'id' | 'createdAt' | 'source'
+>;
